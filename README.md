@@ -1,2 +1,2 @@
 # First-Application
-Private repository for app
+Private repository for Elegant Recorder

@@ -46,6 +46,7 @@ class HomePageState extends State<HomePage> {
           ),
           actions: <Widget>[
             PopupMenuButton(
+              offset: Offset(0, 50),
               itemBuilder: (context) => [
                 PopupMenuItem(
                   value: 1,
@@ -86,7 +87,12 @@ class HomePageState extends State<HomePage> {
   }
 }
 
-class Record extends StatelessWidget {
+class Record extends StatefulWidget {
+  @override
+  _RecordState createState() => _RecordState();
+}
+
+class _RecordState extends State<Record> {
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -97,7 +103,12 @@ class Record extends StatelessWidget {
   }
 }
 
-class Recordings extends StatelessWidget {
+class Recordings extends StatefulWidget {
+  @override
+  _RecordingsState createState() => _RecordingsState();
+}
+
+class _RecordingsState extends State<Recordings> {
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -108,7 +119,12 @@ class Recordings extends StatelessWidget {
   }
 }
 
-class Settings extends StatelessWidget {
+class Settings extends StatefulWidget {
+  @override
+  _SettingsState createState() => _SettingsState();
+}
+
+class _SettingsState extends State<Settings> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(

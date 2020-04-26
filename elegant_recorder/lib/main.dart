@@ -88,7 +88,6 @@ class HomePageState extends State<HomePage> {
 }
 
 class Record extends StatefulWidget {
-
   @override
   _RecordState createState() => _RecordState();
 }
@@ -139,6 +138,7 @@ class _RecordState extends State<Record> with SingleTickerProviderStateMixin {
         break;
     }
     animationController.reset();
+  }
 
   @override
   Widget build(BuildContext context) {

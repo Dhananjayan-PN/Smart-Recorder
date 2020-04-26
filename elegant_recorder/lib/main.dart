@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'dart:math';
 import 'package:file/file.dart';
 import 'package:file/local.dart';
-//import 'package:path_provider/path_provider.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:gradient_app_bar/gradient_app_bar.dart';
 import 'package:audio_recorder/audio_recorder.dart';
 import 'package:page_transition/page_transition.dart';
@@ -164,6 +165,8 @@ class _RecordState extends State<Record> with SingleTickerProviderStateMixin {
           _buttonIcon = Icon(Icons.mic, color: Colors.white);
         });
         print('stopping');
+        await SimplePermissions.requestPermission(Permission.RecordAudio);
+        await SimplePermissions.requestPermission(Permission.WriteExternalStorage);
       }
     } catch (e) {
       print(e);

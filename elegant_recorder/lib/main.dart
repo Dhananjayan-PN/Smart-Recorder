@@ -160,6 +160,10 @@ class _RecordState extends State<Record> with SingleTickerProviderStateMixin {
         });
       } else {
         Scaffold.of(context).showSnackBar(SnackBar(content: Text("You must accept the permissions")));
+        setState(() {
+          _buttonIcon = Icon(Icons.mic, color: Colors.white);
+        });
+        print('stopping');
       }
     } catch (e) {
       print(e);

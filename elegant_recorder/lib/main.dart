@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:gradient_app_bar/gradient_app_bar.dart';
+import 'dart:io';
 import 'package:audio_recorder/audio_recorder.dart';
 import 'package:page_transition/page_transition.dart';
 import 'package:flutter/services.dart';
@@ -93,8 +94,49 @@ class Record extends StatefulWidget {
   _RecordState createState() => _RecordState();
 }
 
-class _RecordState extends State<Record> {
+class _RecordState extends State<Record> with SingleTickerProviderStateMixin {
+  Icon _buttonIcon = Icon(Icons.mic, color: Colors.white);
   bool _isRecording = false;
+  AnimationController animationController;
+  Animation<double> animation;
+
+  @override
+  void initState() {
+    super.initState();
+    animationController = AnimationController(
+        vsync: this,
+        duration: Duration(
+          seconds: 1,
+        ))
+      ..addStatusListener((AnimationStatus status) {
+        if (status == AnimationStatus.completed) {
+          switch (_isRecording) {
+            case (false):
+              {
+                _buttonIcon = Icon(Icons.stop, color: Colors.red);
+                print('recording');
+                _isRecording = true;
+              }
+              break;
+            case (true):
+              {
+                _buttonIcon = Icon(Icons.mic, color: Colors.white);
+                print('stopping');
+                _isRecording = false;
+              }
+              break;
+          }
+          animationController.reset();
+        }
+      });
+    animation = CurvedAnimation(parent: animationController, curve: Curves.easeInBack);
+  }
+
+  @override
+  void dispose() {
+    animationController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -118,18 +160,43 @@ class _RecordState extends State<Record> {
                   )
                 ],
               ),
-              child: IconButton(
-                splashColor: Colors.cyan,
-                iconSize: 50,
-                icon: Icon(
-                  Icons.mic,
-                  color: Colors.white,
-                ),
-                onPressed: () {
-                  setState(() {
-                    if (_isRecording == true) _isRecording = false;
-                    if (_isRecording == false) _isRecording = true;
-                  });
+              child: AnimatedBuilder(
+                animation: animationController,
+                builder: (BuildContext context, Widget _widget) {
+                  return RotationTransition(
+                    turns: animation,
+                    child: IconButton(
+                      splashColor: Colors.cyan,
+                      iconSize: 50,
+                      icon: _buttonIcon,
+                      onPressed: () {
+                        setState(
+                          () {
+                            animationController.forward();
+                            if (animationController.status == AnimationStatus.completed) {
+                              switch (_isRecording) {
+                                case (false):
+                                  {
+                                    _buttonIcon = Icon(Icons.stop, color: Colors.red);
+                                    print('recording');
+                                    _isRecording = true;
+                                  }
+                                  break;
+                                case (true):
+                                  {
+                                    _buttonIcon = Icon(Icons.mic, color: Colors.white);
+                                    print('stopping');
+                                    _isRecording = false;
+                                  }
+                                  break;
+                              }
+                              animationController.reset();
+                            }
+                          },
+                        );
+                      },
+                    ),
+                  );
                 },
               ),
             ),

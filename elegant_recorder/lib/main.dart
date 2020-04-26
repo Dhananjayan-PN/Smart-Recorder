@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:gradient_app_bar/gradient_app_bar.dart';
+import 'package:audio_recorder/audio_recorder.dart';
 import 'package:page_transition/page_transition.dart';
 import 'package:flutter/services.dart';
 
@@ -93,11 +94,47 @@ class Record extends StatefulWidget {
 }
 
 class _RecordState extends State<Record> {
+  bool _isRecording = false;
+
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(begin: Alignment.bottomCenter, end: Alignment.topCenter, colors: [Color(0xff000428), Color(0xff004e92)]),
+      ),
+      child: Column(
+        children: <Widget>[
+          Padding(
+            padding: const EdgeInsets.only(top: 470),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Color(0xff004e92),
+                borderRadius: BorderRadius.circular(40),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black45,
+                    blurRadius: 5.0,
+                    spreadRadius: 5.0,
+                  )
+                ],
+              ),
+              child: IconButton(
+                splashColor: Colors.cyan,
+                iconSize: 50,
+                icon: Icon(
+                  Icons.mic,
+                  color: Colors.white,
+                ),
+                onPressed: () {
+                  setState(() {
+                    if (_isRecording == true) _isRecording = false;
+                    if (_isRecording == false) _isRecording = true;
+                  });
+                },
+              ),
+            ),
+          )
+        ],
       ),
     );
   }

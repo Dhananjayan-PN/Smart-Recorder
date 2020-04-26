@@ -1,11 +1,5 @@
 import 'package:flutter/material.dart';
-import 'dart:math';
-import 'package:file/file.dart';
-import 'package:file/local.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:gradient_app_bar/gradient_app_bar.dart';
-import 'package:audio_recorder/audio_recorder.dart';
 import 'package:page_transition/page_transition.dart';
 import 'package:flutter/services.dart';
 
@@ -94,15 +88,12 @@ class HomePageState extends State<HomePage> {
 }
 
 class Record extends StatefulWidget {
-  final LocalFileSystem localFileSystem;
-  Record({localFileSystem}) : this.localFileSystem = localFileSystem ?? LocalFileSystem();
 
   @override
   _RecordState createState() => _RecordState();
 }
 
 class _RecordState extends State<Record> with SingleTickerProviderStateMixin {
-  Recording _recording = new Recording();
   Icon _buttonIcon = Icon(Icons.mic, color: Colors.white);
   bool _isRecording = false;
   AnimationController animationController;
@@ -136,54 +127,18 @@ class _RecordState extends State<Record> with SingleTickerProviderStateMixin {
         {
           _buttonIcon = Icon(Icons.stop, color: Colors.red);
           print('recording');
-          _start();
+          _isRecording = true;
         }
         break;
       case (true):
         {
           _buttonIcon = Icon(Icons.mic, color: Colors.white);
           print('stopping');
-          _stop();
+          _isRecording = false;
         }
         break;
     }
     animationController.reset();
-  }
-
-  _start() async {
-    try {
-      if (await AudioRecorder.hasPermissions) {
-        await AudioRecorder.start(path: "test", audioOutputFormat: AudioOutputFormat.WAV);
-        bool isRecording = await AudioRecorder.isRecording;
-        setState(() {
-          _recording = Recording(duration: Duration(), path: "test");
-          _isRecording = isRecording;
-        });
-      } else {
-        Scaffold.of(context).showSnackBar(SnackBar(content: Text("You must accept the permissions")));
-        setState(() {
-          _buttonIcon = Icon(Icons.mic, color: Colors.white);
-        });
-        print('stopping');
-        await SimplePermissions.requestPermission(Permission.RecordAudio);
-        await SimplePermissions.requestPermission(Permission.WriteExternalStorage);
-      }
-    } catch (e) {
-      print(e);
-    }
-  }
-
-  _stop() async {
-    var recording = await AudioRecorder.stop();
-    print("Stop recording: ${recording.path}");
-    bool isRecording = await AudioRecorder.isRecording;
-    File file = widget.localFileSystem.file(recording.path);
-    print("  File length: ${await file.length()}");
-    setState(() {
-      _recording = recording;
-      _isRecording = isRecording;
-    });
-  }
 
   @override
   Widget build(BuildContext context) {

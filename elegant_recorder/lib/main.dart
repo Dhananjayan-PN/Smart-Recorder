@@ -110,23 +110,7 @@ class _RecordState extends State<Record> with SingleTickerProviderStateMixin {
         ))
       ..addStatusListener((AnimationStatus status) {
         if (status == AnimationStatus.completed) {
-          switch (_isRecording) {
-            case (false):
-              {
-                _buttonIcon = Icon(Icons.stop, color: Colors.red);
-                print('recording');
-                _isRecording = true;
-              }
-              break;
-            case (true):
-              {
-                _buttonIcon = Icon(Icons.mic, color: Colors.white);
-                print('stopping');
-                _isRecording = false;
-              }
-              break;
-          }
-          animationController.reset();
+          _recordOrStop();
         }
       });
     animation = CurvedAnimation(parent: animationController, curve: Curves.easeInBack);
@@ -138,6 +122,26 @@ class _RecordState extends State<Record> with SingleTickerProviderStateMixin {
     super.dispose();
   }
 
+  void _recordOrStop() {
+    switch (_isRecording) {
+      case (false):
+        {
+          _buttonIcon = Icon(Icons.stop, color: Colors.red);
+          print('recording');
+          _isRecording = true;
+        }
+        break;
+      case (true):
+        {
+          _buttonIcon = Icon(Icons.mic, color: Colors.white);
+          print('stopping');
+          _isRecording = false;
+        }
+        break;
+    }
+    animationController.reset();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -145,12 +149,13 @@ class _RecordState extends State<Record> with SingleTickerProviderStateMixin {
         gradient: LinearGradient(begin: Alignment.bottomCenter, end: Alignment.topCenter, colors: [Color(0xff000428), Color(0xff004e92)]),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: <Widget>[
           Padding(
-            padding: const EdgeInsets.only(top: 470),
+            padding: const EdgeInsets.only(top: 460),
             child: Container(
               decoration: BoxDecoration(
-                color: Color(0xff004e92),
+                color: Colors.lightBlue[900],
                 borderRadius: BorderRadius.circular(40),
                 boxShadow: [
                   BoxShadow(
@@ -167,31 +172,12 @@ class _RecordState extends State<Record> with SingleTickerProviderStateMixin {
                     turns: animation,
                     child: IconButton(
                       splashColor: Colors.cyan,
-                      iconSize: 50,
+                      iconSize: 45,
                       icon: _buttonIcon,
                       onPressed: () {
                         setState(
                           () {
                             animationController.forward();
-                            if (animationController.status == AnimationStatus.completed) {
-                              switch (_isRecording) {
-                                case (false):
-                                  {
-                                    _buttonIcon = Icon(Icons.stop, color: Colors.red);
-                                    print('recording');
-                                    _isRecording = true;
-                                  }
-                                  break;
-                                case (true):
-                                  {
-                                    _buttonIcon = Icon(Icons.mic, color: Colors.white);
-                                    print('stopping');
-                                    _isRecording = false;
-                                  }
-                                  break;
-                              }
-                              animationController.reset();
-                            }
                           },
                         );
                       },

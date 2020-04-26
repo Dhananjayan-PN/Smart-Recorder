@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_sound/flauto.dart';
 import 'package:gradient_app_bar/gradient_app_bar.dart';
 import 'package:page_transition/page_transition.dart';
+import 'package:flutter_sound/flutter_sound_recorder.dart';
+import 'dart:io';
+import 'package:flutter_sound/flutter_sound_player.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:flutter/services.dart';
 
 void main() => runApp(MyApp());
@@ -93,6 +98,8 @@ class Record extends StatefulWidget {
 }
 
 class _RecordState extends State<Record> with SingleTickerProviderStateMixin {
+  FlutterSoundRecorder flutterSoundRecorder = FlutterSoundRecorder();
+  FlutterSoundPlayer flutterSoundPlayer = FlutterSoundPlayer();
   Icon _buttonIcon = Icon(Icons.mic, color: Colors.white);
   bool _isRecording = false;
   AnimationController animationController;
@@ -101,6 +108,8 @@ class _RecordState extends State<Record> with SingleTickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
+    flutterSoundRecorder.initialize();
+    flutterSoundPlayer.initialize();
     animationController = AnimationController(
       vsync: this,
       duration: Duration(
@@ -116,6 +125,8 @@ class _RecordState extends State<Record> with SingleTickerProviderStateMixin {
 
   @override
   void dispose() {
+    flutterSoundRecorder.release();
+    flutterSoundPlayer.release();
     animationController.dispose();
     super.dispose();
   }
@@ -127,6 +138,7 @@ class _RecordState extends State<Record> with SingleTickerProviderStateMixin {
           _buttonIcon = Icon(Icons.stop, color: Colors.red);
           print('recording');
           _isRecording = true;
+          _start();
         }
         break;
       case (true):
@@ -134,10 +146,23 @@ class _RecordState extends State<Record> with SingleTickerProviderStateMixin {
           _buttonIcon = Icon(Icons.mic, color: Colors.white);
           print('stopping');
           _isRecording = false;
+          _stop();
         }
         break;
     }
     animationController.reset();
+  }
+
+  _start() async {
+    Directory appDir = await getApplicationDocumentsDirectory();
+    File outputFile = File('${appDir.path}/flutter_sound-tmp.aac');
+    String result = await flutterSoundRecorder.startRecorder(uri: outputFile.path, codec: t_CODEC.CODEC_AAC);
+  }
+
+  _stop() async {
+    Directory appDir = await getApplicationDocumentsDirectory();
+    String result = await flutterSoundRecorder.stopRecorder();
+    String result2 = await flutterSoundPlayer.startPlayer('${appDir.path}/flutter_sound-tmp.aac');
   }
 
   @override

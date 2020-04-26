@@ -174,11 +174,11 @@ class _RecordState extends State<Record> with SingleTickerProviderStateMixin {
 
   _userCheck() {}
 
-  _startPlaying() async{
+  _startPlaying() async {
     String result2 = await flutterSoundPlayer.startPlayer('${appDir.path}/flutter_sound-tmp.aac');
   }
 
-  _stopPlaying() async{}
+  _stopPlaying() async {}
 
   @override
   Widget build(BuildContext context) {

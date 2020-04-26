@@ -104,10 +104,16 @@ class _RecordState extends State<Record> with SingleTickerProviderStateMixin {
   bool _isRecording = false;
   AnimationController animationController;
   Animation<double> animation;
+  Directory appDir;
+
+  getDirectory() async {
+    appDir = await getApplicationDocumentsDirectory();
+  }
 
   @override
   void initState() {
     super.initState();
+    getDirectory();
     flutterSoundRecorder.initialize();
     flutterSoundPlayer.initialize();
     animationController = AnimationController(
@@ -138,7 +144,7 @@ class _RecordState extends State<Record> with SingleTickerProviderStateMixin {
           _buttonIcon = Icon(Icons.stop, color: Colors.red);
           print('recording');
           _isRecording = true;
-          _start();
+          _startRecording();
         }
         break;
       case (true):
@@ -146,24 +152,33 @@ class _RecordState extends State<Record> with SingleTickerProviderStateMixin {
           _buttonIcon = Icon(Icons.mic, color: Colors.white);
           print('stopping');
           _isRecording = false;
-          _stop();
+          _stopRecording();
         }
         break;
     }
     animationController.reset();
   }
 
-  _start() async {
+  _startRecording() async {
     Directory appDir = await getApplicationDocumentsDirectory();
     File outputFile = File('${appDir.path}/flutter_sound-tmp.aac');
     String result = await flutterSoundRecorder.startRecorder(uri: outputFile.path, codec: t_CODEC.CODEC_AAC);
   }
 
-  _stop() async {
+  _stopRecording() async {
     Directory appDir = await getApplicationDocumentsDirectory();
     String result = await flutterSoundRecorder.stopRecorder();
     String result2 = await flutterSoundPlayer.startPlayer('${appDir.path}/flutter_sound-tmp.aac');
+    _userCheck();
   }
+
+  _userCheck() {}
+
+  _startPlaying() async{
+    String result2 = await flutterSoundPlayer.startPlayer('${appDir.path}/flutter_sound-tmp.aac');
+  }
+
+  _stopPlaying() async{}
 
   @override
   Widget build(BuildContext context) {

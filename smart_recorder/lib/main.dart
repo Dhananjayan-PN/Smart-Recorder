@@ -9,8 +9,11 @@ import 'package:path_provider/path_provider.dart';
 import 'package:flutter/services.dart';
 
 Directory appDir;
+List audioFiles = List();
 
-void main() => runApp(MyApp());
+void main() {
+  runApp(MyApp());
+}
 
 class MyApp extends StatelessWidget {
   // This widget is the root of your application.
@@ -32,14 +35,20 @@ class HomePage extends StatefulWidget {
 }
 
 class HomePageState extends State<HomePage> {
-  getAppDir() async {
+  getData() async {
     appDir = await getApplicationDocumentsDirectory();
+    List files = Directory(appDir.path).listSync();
+    for (var i = 0; i < files.length; i++) {
+      if (files.elementAt(i).path.split('.').last == 'aac') {
+        audioFiles.add(files.elementAt(i));
+      }
+    }
   }
 
   @override
   void initState() {
     super.initState();
-    getAppDir();
+    getData();
   }
 
   @override
@@ -145,6 +154,15 @@ class _RecordState extends State<Record> with SingleTickerProviderStateMixin {
     super.dispose();
   }
 
+  _updateAudioFiles() {
+    List files = Directory(appDir.path).listSync();
+    for (var i = 0; i < files.length; i++) {
+      if (files.elementAt(i).path.split('.').last == 'aac') {
+        audioFiles.add(files.elementAt(i));
+      }
+    }
+  }
+
   void _recordOrStopButton() {
     switch (_isRecording) {
       case (false):
@@ -183,6 +201,7 @@ class _RecordState extends State<Record> with SingleTickerProviderStateMixin {
   _stopRecording() async {
     String result = await flutterSoundRecorder.stopRecorder();
     _userCheck();
+    print(audioFiles);
   }
 
   _userCheck() {
@@ -255,6 +274,7 @@ class _RecordState extends State<Record> with SingleTickerProviderStateMixin {
         content: Text('Recording Deleted'),
       ),
     );
+    _updateAudioFiles();
   }
 
   _rename(String filename) {
@@ -265,13 +285,14 @@ class _RecordState extends State<Record> with SingleTickerProviderStateMixin {
         content: Text('Recording Saved'),
       ),
     );
+    _updateAudioFiles();
   }
 
-  /*_startPlaying() async {
-    String result2 = await flutterSoundPlayer.startPlayer('$recordingsDirPath/flutter_sound-tmp.aac');
+  _startPlaying() async {
+    String result2 = await flutterSoundPlayer.startPlayer('${appDir.path}/flutter_sound-tmp.aac');
   }
 
-  _stopPlaying() async {} */
+  _stopPlaying() async {}
 
   @override
   Widget build(BuildContext context) {

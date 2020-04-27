@@ -46,7 +46,7 @@ class HomePageState extends State<HomePage> {
           elevation: 30,
           gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Color(0xff000428), Color(0xff004e92)]),
           title: Text(
-            'Elegant Recorder',
+            'Smart Recorder',
             style: TextStyle(fontSize: 20),
           ),
           actions: <Widget>[

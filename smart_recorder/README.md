@@ -1,6 +1,6 @@
-# elegantrecorder
+# smartrecorder
 
-An elegant recording application
+A smart recording application
 
 ## Getting Started
 

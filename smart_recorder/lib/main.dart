@@ -8,6 +8,31 @@ import 'package:flutter_sound/flutter_sound_player.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter/services.dart';
 
+getAppDirectory() async {
+  _appDir = await getApplicationDocumentsDirectory();
+  return _appDir.path;
+}
+
+createAndGetRecordingDir() async {
+  _recordings = Directory('$appDirPath/recordings/');
+  if (await _recordings.exists()) {
+    return _recordings.path;
+  } else {
+    _recordings = await _recordings.create();
+    return _recordings.path;
+  }
+}
+
+getAudioFiles() async {
+  return Directory('$recordingsDirPath').listSync();
+}
+
+Directory _appDir;
+Directory _recordings;
+String appDirPath = getAppDirectory();
+String recordingsDirPath = createAndGetRecordingDir();
+List audioFiles = getAudioFiles();
+
 void main() => runApp(MyApp());
 
 class MyApp extends StatelessWidget {
@@ -98,22 +123,18 @@ class Record extends StatefulWidget {
 }
 
 class _RecordState extends State<Record> with SingleTickerProviderStateMixin {
+  final _formKey = GlobalKey<FormState>();
+  TextEditingController _controller = TextEditingController();
   FlutterSoundRecorder flutterSoundRecorder = FlutterSoundRecorder();
   FlutterSoundPlayer flutterSoundPlayer = FlutterSoundPlayer();
-  Icon _buttonIcon = Icon(Icons.mic, color: Colors.white);
+  Icon _buttonIcon = Icon(Icons.mic, color: Colors.white, size: 50);
   bool _isRecording = false;
   AnimationController animationController;
   Animation<double> animation;
-  Directory appDir;
-
-  getDirectory() async {
-    appDir = await getApplicationDocumentsDirectory();
-  }
 
   @override
   void initState() {
     super.initState();
-    getDirectory();
     flutterSoundRecorder.initialize();
     flutterSoundPlayer.initialize();
     animationController = AnimationController(
@@ -141,7 +162,11 @@ class _RecordState extends State<Record> with SingleTickerProviderStateMixin {
     switch (_isRecording) {
       case (false):
         {
-          _buttonIcon = Icon(Icons.stop, color: Colors.red);
+          _buttonIcon = Icon(
+            Icons.stop,
+            color: Colors.red,
+            size: 50,
+          );
           print('recording');
           _isRecording = true;
           _startRecording();
@@ -149,10 +174,14 @@ class _RecordState extends State<Record> with SingleTickerProviderStateMixin {
         break;
       case (true):
         {
-          _buttonIcon = Icon(Icons.mic, color: Colors.white);
+          _stopRecording();
+          _buttonIcon = Icon(
+            Icons.mic,
+            color: Colors.white,
+            size: 50,
+          );
           print('stopping');
           _isRecording = false;
-          _stopRecording();
         }
         break;
     }
@@ -161,21 +190,101 @@ class _RecordState extends State<Record> with SingleTickerProviderStateMixin {
 
   _startRecording() async {
     Directory appDir = await getApplicationDocumentsDirectory();
-    File outputFile = File('${appDir.path}/flutter_sound-tmp.aac');
+    File outputFile = File('$recordingsDirPath/flutter_sound-tmp.aac');
     String result = await flutterSoundRecorder.startRecorder(uri: outputFile.path, codec: t_CODEC.CODEC_AAC);
   }
 
   _stopRecording() async {
-    Directory appDir = await getApplicationDocumentsDirectory();
     String result = await flutterSoundRecorder.stopRecorder();
-    String result2 = await flutterSoundPlayer.startPlayer('${appDir.path}/flutter_sound-tmp.aac');
     _userCheck();
   }
 
-  _userCheck() {}
+  _userCheck() {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false, // user must tap button!
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          elevation: 24.0,
+          backgroundColor: Color(0xff001448),
+          title: Text(
+            'New Recording',
+            style: TextStyle(color: Colors.white),
+          ),
+          content: Form(
+            key: _formKey,
+            child: TextFormField(
+              controller: _controller,
+              decoration: InputDecoration(
+                border: UnderlineInputBorder(
+                  borderSide: const BorderSide(color: Colors.blue, width: 0.0),
+                ),
+                labelText: 'File Name',
+                labelStyle: TextStyle(color: Colors.white54),
+              ),
+              style: TextStyle(color: Colors.white),
+              validator: (value) {
+                return value.isEmpty ? 'File name is rquired to save' : null;
+              },
+            ),
+          ),
+          actions: <Widget>[
+            FlatButton(
+              child: Text(
+                'Delete',
+                style: TextStyle(color: Colors.red),
+              ),
+              onPressed: () {
+                _delete();
+                Navigator.of(context).pop();
+              },
+            ),
+            FlatButton(
+              child: Text(
+                'Save',
+                style: TextStyle(color: Colors.blue),
+              ),
+              onPressed: () {
+                final form = _formKey.currentState;
+                if (form.validate()) {
+                  print('form is valid');
+                  _rename(_controller.text);
+                  Navigator.of(context).pop();
+                } else
+                  print('form is invalid');
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  _delete() {
+    var myFile = File('$recordingsDirPath/flutter_sound-tmp.aac');
+    myFile.delete();
+    Scaffold.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Recording Deleted'),
+      ),
+    );
+  }
+
+  _rename(String filename) {
+    var myFile = File('$recordingsDirPath/flutter_sound-tmp.aac');
+    myFile.rename('$recordingsDirPath/$filename.aac');
+    Scaffold.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Recording Saved'),
+      ),
+    );
+    getAudioFiles();
+    print(audioFiles);
+  }
 
   _startPlaying() async {
-    String result2 = await flutterSoundPlayer.startPlayer('${appDir.path}/flutter_sound-tmp.aac');
+    String result2 = await flutterSoundPlayer.startPlayer('$recordingsDirPath/flutter_sound-tmp.aac');
   }
 
   _stopPlaying() async {}
@@ -186,43 +295,32 @@ class _RecordState extends State<Record> with SingleTickerProviderStateMixin {
       decoration: BoxDecoration(
         gradient: LinearGradient(begin: Alignment.bottomCenter, end: Alignment.topCenter, colors: [Color(0xff000428), Color(0xff004e92)]),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
+      child: ListView(
         children: <Widget>[
           Padding(
             padding: const EdgeInsets.only(top: 460),
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.lightBlue[900],
-                borderRadius: BorderRadius.circular(40),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black45,
-                    blurRadius: 5.0,
-                    spreadRadius: 5.0,
-                  )
-                ],
-              ),
-              child: AnimatedBuilder(
-                animation: animationController,
-                builder: (BuildContext context, Widget _widget) {
-                  return RotationTransition(
-                    turns: animation,
-                    child: IconButton(
-                      splashColor: Colors.cyan,
-                      iconSize: 45,
-                      icon: _buttonIcon,
-                      onPressed: () {
-                        setState(
-                          () {
-                            animationController.forward();
-                          },
-                        );
-                      },
-                    ),
-                  );
-                },
-              ),
+            child: AnimatedBuilder(
+              animation: animationController,
+              builder: (BuildContext context, Widget _widget) {
+                return RotationTransition(
+                  turns: animation,
+                  child: RawMaterialButton(
+                    padding: EdgeInsets.all(10.0),
+                    fillColor: Colors.lightBlue[900],
+                    elevation: 20,
+                    shape: CircleBorder(),
+                    splashColor: Colors.cyan,
+                    child: _buttonIcon,
+                    onPressed: () {
+                      setState(
+                        () {
+                          animationController.forward();
+                        },
+                      );
+                    },
+                  ),
+                );
+              },
             ),
           )
         ],

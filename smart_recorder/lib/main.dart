@@ -8,30 +8,7 @@ import 'package:flutter_sound/flutter_sound_player.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter/services.dart';
 
-getAppDirectory() async {
-  _appDir = await getApplicationDocumentsDirectory();
-  return _appDir.path;
-}
-
-createAndGetRecordingDir() async {
-  _recordings = Directory('$appDirPath/recordings/');
-  if (await _recordings.exists()) {
-    return _recordings.path;
-  } else {
-    _recordings = await _recordings.create();
-    return _recordings.path;
-  }
-}
-
-getAudioFiles() async {
-  return Directory('$recordingsDirPath').listSync();
-}
-
-Directory _appDir;
-Directory _recordings;
-String appDirPath = getAppDirectory();
-String recordingsDirPath = createAndGetRecordingDir();
-List audioFiles = getAudioFiles();
+Directory appDir;
 
 void main() => runApp(MyApp());
 
@@ -55,6 +32,16 @@ class HomePage extends StatefulWidget {
 }
 
 class HomePageState extends State<HomePage> {
+  getAppDir() async {
+    appDir = await getApplicationDocumentsDirectory();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    getAppDir();
+  }
+
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
@@ -189,8 +176,7 @@ class _RecordState extends State<Record> with SingleTickerProviderStateMixin {
   }
 
   _startRecording() async {
-    Directory appDir = await getApplicationDocumentsDirectory();
-    File outputFile = File('$recordingsDirPath/flutter_sound-tmp.aac');
+    File outputFile = File('${appDir.path}/flutter_sound-tmp.aac');
     String result = await flutterSoundRecorder.startRecorder(uri: outputFile.path, codec: t_CODEC.CODEC_AAC);
   }
 
@@ -262,7 +248,7 @@ class _RecordState extends State<Record> with SingleTickerProviderStateMixin {
   }
 
   _delete() {
-    var myFile = File('$recordingsDirPath/flutter_sound-tmp.aac');
+    var myFile = File('${appDir.path}/flutter_sound-tmp.aac');
     myFile.delete();
     Scaffold.of(context).showSnackBar(
       SnackBar(
@@ -272,22 +258,20 @@ class _RecordState extends State<Record> with SingleTickerProviderStateMixin {
   }
 
   _rename(String filename) {
-    var myFile = File('$recordingsDirPath/flutter_sound-tmp.aac');
-    myFile.rename('$recordingsDirPath/$filename.aac');
+    var myFile = File('${appDir.path}/flutter_sound-tmp.aac');
+    myFile.rename('${appDir.path}/$filename.aac');
     Scaffold.of(context).showSnackBar(
       SnackBar(
         content: Text('Recording Saved'),
       ),
     );
-    getAudioFiles();
-    print(audioFiles);
   }
 
-  _startPlaying() async {
+  /*_startPlaying() async {
     String result2 = await flutterSoundPlayer.startPlayer('$recordingsDirPath/flutter_sound-tmp.aac');
   }
 
-  _stopPlaying() async {}
+  _stopPlaying() async {} */
 
   @override
   Widget build(BuildContext context) {

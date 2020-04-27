@@ -7,8 +7,11 @@ import 'dart:io';
 import 'package:flutter_sound/flutter_sound_player.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_visualizers/Visualizers/CircularBarVisualizer.dart';
+import 'package:flutter_visualizers/visualizer.dart';
 
 Directory appDir;
+int playerID;
 List audioFiles = List();
 
 void main() {
@@ -43,6 +46,7 @@ class HomePageState extends State<HomePage> {
         audioFiles.add(files.elementAt(i));
       }
     }
+    audioFiles.toSet().toList();
   }
 
   @override
@@ -157,7 +161,23 @@ class _RecordState extends State<Record> with SingleTickerProviderStateMixin, Au
     super.dispose();
   }
 
+  Future<void> initPlatformState() async {
+    methodCalls.playSong();
+    int sessionId;
+    // Platform messages may fail, so we use a try/catch PlatformException.
+    try {
+      sessionId = await methodCalls.getSessionId();
+    } on Exception {
+      sessionId = null;
+    }
+
+    setState(() {
+      playerID = sessionId;
+    });
+  }
+
   _updateAudioFiles() {
+    audioFiles = List();
     List files = Directory(appDir.path).listSync();
     for (var i = 0; i < files.length; i++) {
       if (files.elementAt(i).path.split('.').last == 'aac') {
@@ -306,8 +326,22 @@ class _RecordState extends State<Record> with SingleTickerProviderStateMixin, Au
       ),
       child: ListView(
         children: <Widget>[
+          Visualizer(
+            builder: (BuildContext context, List<int> wave) {
+              return new CustomPaint(
+                painter: new CircularBarVisualizer(
+                  waveData: wave,
+                  height: MediaQuery.of(context).size.height,
+                  width: MediaQuery.of(context).size.width,
+                  color: Colors.blueAccent,
+                ),
+                child: new Container(),
+              );
+            },
+            id: playerID,
+          ),
           Padding(
-            padding: const EdgeInsets.only(top: 460),
+            padding: const EdgeInsets.only(top: 160),
             child: AnimatedBuilder(
               animation: animationController,
               builder: (BuildContext context, Widget _widget) {

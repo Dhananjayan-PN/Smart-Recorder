@@ -1,2 +1,2 @@
-# Elegant-Recorder
-Private repository for the Elegant Recorder mobile application
+# Smartt-Recorder
+Private repository for the Smart Recorder mobile application

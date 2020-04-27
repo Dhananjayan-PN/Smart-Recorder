@@ -118,7 +118,7 @@ class Record extends StatefulWidget {
   _RecordState createState() => _RecordState();
 }
 
-class _RecordState extends State<Record> with SingleTickerProviderStateMixin {
+class _RecordState extends State<Record> with SingleTickerProviderStateMixin, AutomaticKeepAliveClientMixin<Record> {
   final _formKey = GlobalKey<FormState>();
   TextEditingController _controller = TextEditingController();
   FlutterSoundRecorder flutterSoundRecorder = FlutterSoundRecorder();
@@ -127,6 +127,9 @@ class _RecordState extends State<Record> with SingleTickerProviderStateMixin {
   bool _isRecording = false;
   AnimationController animationController;
   Animation<double> animation;
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -296,6 +299,7 @@ class _RecordState extends State<Record> with SingleTickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(begin: Alignment.bottomCenter, end: Alignment.topCenter, colors: [Color(0xff000428), Color(0xff004e92)]),
@@ -339,9 +343,13 @@ class Recordings extends StatefulWidget {
   _RecordingsState createState() => _RecordingsState();
 }
 
-class _RecordingsState extends State<Recordings> {
+class _RecordingsState extends State<Recordings> with AutomaticKeepAliveClientMixin<Recordings> {
+  @override
+  bool get wantKeepAlive => true;
+
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(begin: Alignment.bottomCenter, end: Alignment.topCenter, colors: [Color(0xff000428), Color(0xff004e92)]),

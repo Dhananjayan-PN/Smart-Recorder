@@ -12,6 +12,21 @@ import 'package:flutter/services.dart';
 
 Directory appDir;
 List audioFiles = List();
+OverlayEntry player = OverlayEntry(builder: (context) {
+  final size = MediaQuery.of(context).size;
+  print(size.width);
+  return Positioned(
+    width: size.width,
+    height: 150,
+    top: size.height - 150,
+    child: Material(
+      color: Colors.transparent,
+      child: Container(
+        decoration: BoxDecoration(shape: BoxShape.rectangle, color: Color(0xff000428)),
+      ),
+    ),
+  );
+});
 
 void main() {
   runApp(MyApp());
@@ -36,7 +51,9 @@ class HomePage extends StatefulWidget {
   HomePageState createState() => HomePageState();
 }
 
-class HomePageState extends State<HomePage> {
+class HomePageState extends State<HomePage> with SingleTickerProviderStateMixin {
+  TabController _tabController;
+
   getData() async {
     appDir = await getApplicationDocumentsDirectory();
     List files = Directory(appDir.path).listSync();
@@ -48,10 +65,20 @@ class HomePageState extends State<HomePage> {
     audioFiles.toSet().toList();
   }
 
+  _handleTabSelection() {
+    setState(() {
+      try {
+        player.remove();
+      } catch (e) {}
+    });
+  }
+
   @override
   void initState() {
     super.initState();
     getData();
+    _tabController = new TabController(vsync: this, initialIndex: 0, length: 2);
+    _tabController.addListener(_handleTabSelection);
   }
 
   @override
@@ -69,10 +96,7 @@ class HomePageState extends State<HomePage> {
           ),
           elevation: 30,
           gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Color(0xff000428), Color(0xff004e92)]),
-          title: Text(
-            'Smart Recorder',
-            style: TextStyle(fontSize: 20),
-          ),
+          title: Text('Smart Recorder', style: TextStyle(fontSize: 20)),
           actions: <Widget>[
             PopupMenuButton(
               offset: Offset(0, 50),
@@ -95,21 +119,13 @@ class HomePageState extends State<HomePage> {
             )
           ],
           bottom: TabBar(
-            tabs: <Widget>[
-              Tab(
-                text: 'Record',
-              ),
-              Tab(
-                text: 'Recordings',
-              )
-            ],
+            controller: _tabController,
+            tabs: <Widget>[Tab(text: 'Record'), Tab(text: 'Recordings')],
           ),
         ),
         body: TabBarView(
-          children: <Widget>[
-            Record(),
-            Recordings(),
-          ],
+          controller: _tabController,
+          children: <Widget>[Record(), Recordings()],
         ),
       ),
     );
@@ -416,7 +432,7 @@ class _RecordingsState extends State<Recordings> with SingleTickerProviderStateM
   @override
   void initState() {
     super.initState();
-    flutterSoundPlayer.initialize();s
+    flutterSoundPlayer.initialize();
   }
 
   @override
@@ -454,22 +470,6 @@ class _RecordingsState extends State<Recordings> with SingleTickerProviderStateM
     _updateAudioFiles();
   }
 
-  OverlayEntry player = OverlayEntry(builder: (context) {
-    final size = MediaQuery.of(context).size;
-    print(size.width);
-    return Positioned(
-      width: size.width,
-      height: 150,
-      top: size.height - 150,
-      child: Material(
-        color: Colors.transparent,
-        child: Container(
-          decoration: BoxDecoration(shape: BoxShape.rectangle, color: Color(0xff000428)),
-        ),
-      ),
-    );
-  });
-
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -486,11 +486,7 @@ class _RecordingsState extends State<Recordings> with SingleTickerProviderStateM
             return Column(
               children: <Widget>[
                 ListTile(
-                  leading: Icon(
-                    Icons.music_note,
-                    color: Colors.white,
-                    size: 35,
-                  ),
+                  leading: Icon(Icons.music_note, color: Colors.white, size: 35),
                   title: Text(
                     audioFiles.elementAt(index).path.split('/').last.split('.').first,
                     style: TextStyle(color: Colors.white),

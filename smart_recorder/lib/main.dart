@@ -4,14 +4,13 @@ import 'package:gradient_app_bar/gradient_app_bar.dart';
 import 'package:page_transition/page_transition.dart';
 import 'package:flutter_sound/flutter_sound_recorder.dart';
 import 'dart:io';
+import 'dart:async';
+import 'package:share/share.dart';
 import 'package:flutter_sound/flutter_sound_player.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_visualizers/Visualizers/CircularBarVisualizer.dart';
-import 'package:flutter_visualizers/visualizer.dart';
 
 Directory appDir;
-int playerID;
 List audioFiles = List();
 
 void main() {
@@ -122,15 +121,17 @@ class Record extends StatefulWidget {
   _RecordState createState() => _RecordState();
 }
 
-class _RecordState extends State<Record> with SingleTickerProviderStateMixin, AutomaticKeepAliveClientMixin<Record> {
+class _RecordState extends State<Record> with TickerProviderStateMixin, AutomaticKeepAliveClientMixin<Record> {
   final _formKey = GlobalKey<FormState>();
   TextEditingController _controller = TextEditingController();
   FlutterSoundRecorder flutterSoundRecorder = FlutterSoundRecorder();
-  FlutterSoundPlayer flutterSoundPlayer = FlutterSoundPlayer();
   Icon _buttonIcon = Icon(Icons.mic, color: Colors.white, size: 50);
   bool _isRecording = false;
   AnimationController animationController;
+  AnimationController animationController2;
   Animation<double> animation;
+  String stopWatchTime = "00:00:00";
+  var stopWatch = Stopwatch();
 
   @override
   bool get wantKeepAlive => true;
@@ -139,7 +140,6 @@ class _RecordState extends State<Record> with SingleTickerProviderStateMixin, Au
   void initState() {
     super.initState();
     flutterSoundRecorder.initialize();
-    flutterSoundPlayer.initialize();
     animationController = AnimationController(
       vsync: this,
       duration: Duration(
@@ -156,24 +156,8 @@ class _RecordState extends State<Record> with SingleTickerProviderStateMixin, Au
   @override
   void dispose() {
     flutterSoundRecorder.release();
-    flutterSoundPlayer.release();
     animationController.dispose();
     super.dispose();
-  }
-
-  Future<void> initPlatformState() async {
-    methodCalls.playSong();
-    int sessionId;
-    // Platform messages may fail, so we use a try/catch PlatformException.
-    try {
-      sessionId = await methodCalls.getSessionId();
-    } on Exception {
-      sessionId = null;
-    }
-
-    setState(() {
-      playerID = sessionId;
-    });
   }
 
   _updateAudioFiles() {
@@ -216,15 +200,41 @@ class _RecordState extends State<Record> with SingleTickerProviderStateMixin, Au
     animationController.reset();
   }
 
+  void startTimer() {
+    Timer(Duration(seconds: 1), keepRunning);
+  }
+
+  void keepRunning() {
+    if (stopWatch.isRunning) startTimer();
+    setState(() {
+      stopWatchTime = stopWatch.elapsed.inHours.toString().padLeft(2, "0") +
+          ":" +
+          (stopWatch.elapsed.inMinutes % 60).toString().padLeft(2, "0") +
+          ":" +
+          (stopWatch.elapsed.inSeconds % 60).toString().padLeft(2, "0");
+    });
+  }
+
   _startRecording() async {
     File outputFile = File('${appDir.path}/flutter_sound-tmp.aac');
     String result = await flutterSoundRecorder.startRecorder(uri: outputFile.path, codec: t_CODEC.CODEC_AAC);
+    stopWatch.start();
+    startTimer();
+    setState(() {
+      _isRecording = true;
+    });
   }
 
   _stopRecording() async {
     String result = await flutterSoundRecorder.stopRecorder();
+    stopWatch.stop();
+    stopWatch.reset();
+    stopWatchTime = "00:00:00";
     _userCheck();
     print(audioFiles);
+    setState(() {
+      _isRecording = false;
+    });
   }
 
   _userCheck() {
@@ -311,12 +321,6 @@ class _RecordState extends State<Record> with SingleTickerProviderStateMixin, Au
     _updateAudioFiles();
   }
 
-  _startPlaying() async {
-    String result2 = await flutterSoundPlayer.startPlayer('${appDir.path}/flutter_sound-tmp.aac');
-  }
-
-  _stopPlaying() async {}
-
   @override
   Widget build(BuildContext context) {
     super.build(context);
@@ -326,22 +330,50 @@ class _RecordState extends State<Record> with SingleTickerProviderStateMixin, Au
       ),
       child: ListView(
         children: <Widget>[
-          Visualizer(
-            builder: (BuildContext context, List<int> wave) {
-              return new CustomPaint(
-                painter: new CircularBarVisualizer(
-                  waveData: wave,
-                  height: MediaQuery.of(context).size.height,
-                  width: MediaQuery.of(context).size.width,
-                  color: Colors.blueAccent,
+          if (_isRecording == false)
+            Padding(
+              padding: EdgeInsets.only(top: 170),
+              child: Container(
+                child: CustomPaint(
+                  painter: VisualizerPainter1(),
+                  child: Container(
+                    child: Center(
+                      child: Text(
+                        '00:00:00',
+                        style: TextStyle(
+                          fontSize: 50,
+                          color: Colors.black,
+                          fontWeight: FontWeight.w100,
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
-                child: new Container(),
-              );
-            },
-            id: playerID,
-          ),
+              ),
+            ),
+          if (_isRecording == true)
+            Padding(
+              padding: EdgeInsets.only(top: 170),
+              child: Container(
+                child: CustomPaint(
+                  painter: VisualizerPainter2(),
+                  child: Container(
+                    child: Center(
+                      child: Text(
+                        stopWatchTime,
+                        style: TextStyle(
+                          fontSize: 50,
+                          color: Colors.red,
+                          fontWeight: FontWeight.w100,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
           Padding(
-            padding: const EdgeInsets.only(top: 160),
+            padding: EdgeInsets.only(top: 240),
             child: AnimatedBuilder(
               animation: animationController,
               builder: (BuildContext context, Widget _widget) {
@@ -377,16 +409,123 @@ class Recordings extends StatefulWidget {
   _RecordingsState createState() => _RecordingsState();
 }
 
-class _RecordingsState extends State<Recordings> with AutomaticKeepAliveClientMixin<Recordings> {
+class _RecordingsState extends State<Recordings> with SingleTickerProviderStateMixin {
+  FlutterSoundPlayer flutterSoundPlayer = FlutterSoundPlayer();
+  bool _isPlaying = false;
+
   @override
-  bool get wantKeepAlive => true;
+  void initState() {
+    super.initState();
+    flutterSoundPlayer.initialize();s
+  }
+
+  @override
+  void dispose() {
+    flutterSoundPlayer.release();
+    super.dispose();
+  }
+
+  _updateAudioFiles() {
+    audioFiles = List();
+    List files = Directory(appDir.path).listSync();
+    for (var i = 0; i < files.length; i++) {
+      if (files.elementAt(i).path.split('.').last == 'aac') {
+        audioFiles.add(files.elementAt(i));
+      }
+    }
+  }
+
+  _startPlaying(String filename) async {
+    String result = await flutterSoundPlayer.startPlayer('${appDir.path}/$filename.aac');
+  }
+
+  _stopPlaying() async {
+    String result = await flutterSoundPlayer.stopPlayer();
+  }
+
+  _delete(String filename) {
+    var myFile = File('${appDir.path}/$filename.aac');
+    myFile.delete();
+    Scaffold.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Recording Deleted'),
+      ),
+    );
+    _updateAudioFiles();
+  }
+
+  OverlayEntry player = OverlayEntry(builder: (context) {
+    final size = MediaQuery.of(context).size;
+    print(size.width);
+    return Positioned(
+      width: size.width,
+      height: 150,
+      top: size.height - 150,
+      child: Material(
+        color: Colors.transparent,
+        child: Container(
+          decoration: BoxDecoration(shape: BoxShape.rectangle, color: Color(0xff000428)),
+        ),
+      ),
+    );
+  });
 
   @override
   Widget build(BuildContext context) {
-    super.build(context);
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(begin: Alignment.bottomCenter, end: Alignment.topCenter, colors: [Color(0xff000428), Color(0xff004e92)]),
+      ),
+      child: Padding(
+        padding: EdgeInsets.only(top: 10),
+        child: ListView.builder(
+          scrollDirection: Axis.vertical,
+          shrinkWrap: true,
+          itemCount: audioFiles.length,
+          itemBuilder: (context, index) {
+            return Column(
+              children: <Widget>[
+                ListTile(
+                  leading: Icon(
+                    Icons.music_note,
+                    color: Colors.white,
+                    size: 35,
+                  ),
+                  title: Text(
+                    audioFiles.elementAt(index).path.split('/').last.split('.').first,
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  trailing: Wrap(
+                    children: <Widget>[
+                      IconButton(icon: Icon(Icons.share, color: Colors.blue), onPressed: () {}),
+                      IconButton(
+                        icon: Icon(Icons.delete, color: Colors.red),
+                        onPressed: () {
+                          _delete(audioFiles.elementAt(index).path.split('/').last.split('.').first);
+                          setState(() {});
+                        },
+                      ),
+                    ],
+                  ),
+                  onTap: () {
+                    if (!_isPlaying) {
+                      Overlay.of(context).insert(player);
+                      _startPlaying(audioFiles.elementAt(index).path.split('/').last.split('.').first);
+                    }
+                    if (_isPlaying) {
+                      _stopPlaying();
+                      player.remove();
+                    }
+                    setState(() {
+                      _isPlaying = !_isPlaying;
+                    });
+                  },
+                ),
+                Divider(color: Colors.black54)
+              ],
+            );
+          },
+        ),
       ),
     );
   }
@@ -421,5 +560,45 @@ class _SettingsState extends State<Settings> {
         ),
       ),
     );
+  }
+}
+
+class VisualizerPainter1 extends CustomPainter {
+  var wavePaint = Paint()
+    ..color = Colors.black
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 2.0
+    ..isAntiAlias = true;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    double centerX = size.width / 2.0;
+    double centerY = size.height / 2.0;
+    canvas.drawCircle(Offset(centerX, centerY), 120.0, wavePaint);
+  }
+
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) {
+    return true;
+  }
+}
+
+class VisualizerPainter2 extends CustomPainter {
+  var wavePaint = Paint()
+    ..color = Colors.red[700]
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 2.0
+    ..isAntiAlias = true;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    double centerX = size.width / 2.0;
+    double centerY = size.height / 2.0;
+    canvas.drawCircle(Offset(centerX, centerY), 120.0, wavePaint);
+  }
+
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) {
+    return true;
   }
 }

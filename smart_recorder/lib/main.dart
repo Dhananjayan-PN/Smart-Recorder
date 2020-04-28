@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_sound/flauto.dart';
 import 'package:gradient_app_bar/gradient_app_bar.dart';
@@ -5,28 +6,13 @@ import 'package:page_transition/page_transition.dart';
 import 'package:flutter_sound/flutter_sound_recorder.dart';
 import 'dart:io';
 import 'dart:async';
-import 'package:share/share.dart';
+//import 'package:share/share.dart';
 import 'package:flutter_sound/flutter_sound_player.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter/services.dart';
 
 Directory appDir;
 List audioFiles = List();
-OverlayEntry player = OverlayEntry(builder: (context) {
-  final size = MediaQuery.of(context).size;
-  print(size.width);
-  return Positioned(
-    width: size.width,
-    height: 150,
-    top: size.height - 150,
-    child: Material(
-      color: Colors.transparent,
-      child: Container(
-        decoration: BoxDecoration(shape: BoxShape.rectangle, color: Color(0xff000428)),
-      ),
-    ),
-  );
-});
 
 void main() {
   runApp(MyApp());
@@ -52,8 +38,6 @@ class HomePage extends StatefulWidget {
 }
 
 class HomePageState extends State<HomePage> with SingleTickerProviderStateMixin {
-  TabController _tabController;
-
   getData() async {
     appDir = await getApplicationDocumentsDirectory();
     List files = Directory(appDir.path).listSync();
@@ -65,20 +49,10 @@ class HomePageState extends State<HomePage> with SingleTickerProviderStateMixin 
     audioFiles.toSet().toList();
   }
 
-  _handleTabSelection() {
-    setState(() {
-      try {
-        player.remove();
-      } catch (e) {}
-    });
-  }
-
   @override
   void initState() {
     super.initState();
     getData();
-    _tabController = new TabController(vsync: this, initialIndex: 0, length: 2);
-    _tabController.addListener(_handleTabSelection);
   }
 
   @override
@@ -119,12 +93,10 @@ class HomePageState extends State<HomePage> with SingleTickerProviderStateMixin 
             )
           ],
           bottom: TabBar(
-            controller: _tabController,
             tabs: <Widget>[Tab(text: 'Record'), Tab(text: 'Recordings')],
           ),
         ),
         body: TabBarView(
-          controller: _tabController,
           children: <Widget>[Record(), Recordings()],
         ),
       ),
@@ -233,7 +205,7 @@ class _RecordState extends State<Record> with TickerProviderStateMixin, Automati
 
   _startRecording() async {
     File outputFile = File('${appDir.path}/flutter_sound-tmp.aac');
-    String result = await flutterSoundRecorder.startRecorder(uri: outputFile.path, codec: t_CODEC.CODEC_AAC);
+    await flutterSoundRecorder.startRecorder(uri: outputFile.path, codec: t_CODEC.CODEC_AAC);
     stopWatch.start();
     startTimer();
     setState(() {
@@ -242,7 +214,7 @@ class _RecordState extends State<Record> with TickerProviderStateMixin, Automati
   }
 
   _stopRecording() async {
-    String result = await flutterSoundRecorder.stopRecorder();
+    flutterSoundRecorder.stopRecorder();
     stopWatch.stop();
     stopWatch.reset();
     stopWatchTime = "00:00:00";
@@ -320,6 +292,7 @@ class _RecordState extends State<Record> with TickerProviderStateMixin, Automati
     myFile.delete();
     Scaffold.of(context).showSnackBar(
       SnackBar(
+        duration: Duration(seconds: 2),
         content: Text('Recording Deleted'),
       ),
     );
@@ -331,6 +304,7 @@ class _RecordState extends State<Record> with TickerProviderStateMixin, Automati
     myFile.rename('${appDir.path}/$filename.aac');
     Scaffold.of(context).showSnackBar(
       SnackBar(
+        duration: Duration(seconds: 2),
         content: Text('Recording Saved'),
       ),
     );
@@ -380,7 +354,6 @@ class _RecordState extends State<Record> with TickerProviderStateMixin, Automati
                         style: TextStyle(
                           fontSize: 50,
                           color: Colors.red,
-                          fontWeight: FontWeight.w100,
                         ),
                       ),
                     ),
@@ -389,15 +362,15 @@ class _RecordState extends State<Record> with TickerProviderStateMixin, Automati
               ),
             ),
           Padding(
-            padding: EdgeInsets.only(top: 240),
+            padding: EdgeInsets.only(top: 220),
             child: AnimatedBuilder(
               animation: animationController,
               builder: (BuildContext context, Widget _widget) {
                 return RotationTransition(
                   turns: animation,
                   child: RawMaterialButton(
-                    padding: EdgeInsets.all(10.0),
-                    fillColor: Colors.lightBlue[900],
+                    padding: EdgeInsets.all(12.0),
+                    fillColor: Color(0xff000428),
                     elevation: 20,
                     shape: CircleBorder(),
                     splashColor: Colors.cyan,
@@ -426,6 +399,7 @@ class Recordings extends StatefulWidget {
 }
 
 class _RecordingsState extends State<Recordings> with SingleTickerProviderStateMixin {
+  AnimationController _animationController;
   FlutterSoundPlayer flutterSoundPlayer = FlutterSoundPlayer();
   bool _isPlaying = false;
 
@@ -433,10 +407,12 @@ class _RecordingsState extends State<Recordings> with SingleTickerProviderStateM
   void initState() {
     super.initState();
     flutterSoundPlayer.initialize();
+    _animationController = AnimationController(vsync: this, duration: Duration(milliseconds: 300));
   }
 
   @override
   void dispose() {
+    _animationController.dispose();
     flutterSoundPlayer.release();
     super.dispose();
   }
@@ -452,18 +428,22 @@ class _RecordingsState extends State<Recordings> with SingleTickerProviderStateM
   }
 
   _startPlaying(String filename) async {
-    String result = await flutterSoundPlayer.startPlayer('${appDir.path}/$filename.aac');
+    await flutterSoundPlayer.startPlayer('${appDir.path}/$filename.aac');
   }
 
   _stopPlaying() async {
-    String result = await flutterSoundPlayer.stopPlayer();
+    await flutterSoundPlayer.stopPlayer();
   }
 
   _delete(String filename) {
+    if (_isPlaying) {
+      flutterSoundPlayer.stopPlayer();
+    }
     var myFile = File('${appDir.path}/$filename.aac');
     myFile.delete();
     Scaffold.of(context).showSnackBar(
       SnackBar(
+        duration: Duration(seconds: 2),
         content: Text('Recording Deleted'),
       ),
     );
@@ -476,52 +456,73 @@ class _RecordingsState extends State<Recordings> with SingleTickerProviderStateM
       decoration: BoxDecoration(
         gradient: LinearGradient(begin: Alignment.bottomCenter, end: Alignment.topCenter, colors: [Color(0xff000428), Color(0xff004e92)]),
       ),
-      child: Padding(
-        padding: EdgeInsets.only(top: 10),
-        child: ListView.builder(
-          scrollDirection: Axis.vertical,
-          shrinkWrap: true,
-          itemCount: audioFiles.length,
-          itemBuilder: (context, index) {
-            return Column(
-              children: <Widget>[
-                ListTile(
-                  leading: Icon(Icons.music_note, color: Colors.white, size: 35),
-                  title: Text(
-                    audioFiles.elementAt(index).path.split('/').last.split('.').first,
-                    style: TextStyle(color: Colors.white),
+      child: Stack(
+        children: <Widget>[
+          ListView.builder(
+            scrollDirection: Axis.vertical,
+            shrinkWrap: true,
+            itemCount: audioFiles.length,
+            itemBuilder: (context, index) {
+              return Column(
+                children: <Widget>[
+                  ListTile(
+                    leading: Icon(Icons.music_note, color: Colors.white, size: 35),
+                    title: Text(
+                      audioFiles.elementAt(index).path.split('/').last.split('.').first,
+                      style: TextStyle(color: Colors.white),
+                    ),
+                    trailing: Wrap(
+                      children: <Widget>[
+                        IconButton(icon: Icon(Icons.share, color: Colors.blue), onPressed: () {}),
+                        IconButton(
+                          icon: Icon(Icons.delete, color: Colors.red),
+                          onPressed: () {
+                            _delete(audioFiles.elementAt(index).path.split('/').last.split('.').first);
+                            setState(() {});
+                          },
+                        ),
+                      ],
+                    ),
+                    onTap: () {},
                   ),
-                  trailing: Wrap(
-                    children: <Widget>[
-                      IconButton(icon: Icon(Icons.share, color: Colors.blue), onPressed: () {}),
-                      IconButton(
-                        icon: Icon(Icons.delete, color: Colors.red),
-                        onPressed: () {
-                          _delete(audioFiles.elementAt(index).path.split('/').last.split('.').first);
-                          setState(() {});
-                        },
+                  Divider(color: Colors.black54)
+                ],
+              );
+            },
+          ),
+          Positioned(
+            bottom: 0.0,
+            child: Container(
+              height: 110,
+              width: MediaQuery.of(context).size.width,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.only(topLeft: Radius.circular(30), topRight: Radius.circular(30)),
+                color: Color(0xff000428),
+              ),
+              child: Row(
+                children: <Widget>[
+                  Padding(
+                    padding: EdgeInsets.only(left: 10),
+                    child: IconButton(
+                      iconSize: 40,
+                      icon: AnimatedIcon(
+                        icon: AnimatedIcons.play_pause,
+                        progress: _animationController,
+                        color: Colors.white,
                       ),
-                    ],
-                  ),
-                  onTap: () {
-                    if (!_isPlaying) {
-                      Overlay.of(context).insert(player);
-                      _startPlaying(audioFiles.elementAt(index).path.split('/').last.split('.').first);
-                    }
-                    if (_isPlaying) {
-                      _stopPlaying();
-                      player.remove();
-                    }
-                    setState(() {
-                      _isPlaying = !_isPlaying;
-                    });
-                  },
-                ),
-                Divider(color: Colors.black54)
-              ],
-            );
-          },
-        ),
+                      onPressed: () {
+                        setState(() {
+                          _isPlaying = !_isPlaying;
+                          _isPlaying ? _animationController.forward() : _animationController.reverse();
+                        });
+                      },
+                    ),
+                  )
+                ],
+              ),
+            ),
+          )
+        ],
       ),
     );
   }
@@ -581,7 +582,7 @@ class VisualizerPainter1 extends CustomPainter {
 
 class VisualizerPainter2 extends CustomPainter {
   var wavePaint = Paint()
-    ..color = Colors.red[700]
+    ..color = Colors.red
     ..style = PaintingStyle.stroke
     ..strokeWidth = 2.0
     ..isAntiAlias = true;

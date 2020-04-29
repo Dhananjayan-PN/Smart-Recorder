@@ -418,7 +418,9 @@ class _RecordingsState extends State<Recordings>
   FlutterSoundPlayer flutterSoundPlayer = FlutterSoundPlayer();
   bool _isPlaying = false;
   bool _showPlayer = false;
+  bool _isPaused = false;
   Widget player;
+  int _selectedIndex;
 
   @override
   void initState() {
@@ -446,11 +448,27 @@ class _RecordingsState extends State<Recordings>
   }
 
   _startPlaying(String filename) async {
-    await flutterSoundPlayer.startPlayer('${appDir.path}/$filename.aac');
+    await flutterSoundPlayer.startPlayer('${appDir.path}/$filename.aac',
+        whenFinished: () {
+      setState(() {
+        _isPlaying = !_isPlaying;
+        _isPlaying
+            ? _animationController.forward()
+            : _animationController.reverse();
+      });
+    });
   }
 
   _stopPlaying() async {
     await flutterSoundPlayer.stopPlayer();
+  }
+
+  _pausePlaying() async {
+    await flutterSoundPlayer.pausePlayer();
+  }
+
+  _resumePlaying() async {
+    await flutterSoundPlayer.resumePlayer();
   }
 
   _delete(String filename) {
@@ -468,7 +486,9 @@ class _RecordingsState extends State<Recordings>
     _updateAudioFiles();
   }
 
-  Widget _player(BuildContext context, String filename) {
+  Widget _player(BuildContext context, int index) {
+    String filename =
+        audioFiles.elementAt(index).path.split('/').last.split('.').first;
     return Positioned(
       bottom: 0.0,
       child: Container(
@@ -507,20 +527,38 @@ class _RecordingsState extends State<Recordings>
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
                   IconButton(
+                    splashColor: Colors.blue,
                     icon: Icon(
-                      Icons.skip_previous,
+                      Icons.delete,
                       color: Colors.transparent,
                     ),
                     onPressed: () {},
                   ),
                   IconButton(
+                    splashColor: Colors.blue,
+                    disabledColor: Colors.black,
                     icon: Icon(
                       Icons.skip_previous,
                       color: Colors.white,
                     ),
-                    onPressed: () {},
+                    onPressed: () {
+                      if (index == 0) {
+                        return null;
+                      } else {
+                        _stopPlaying();
+                        setState(() {
+                          _isPaused = false;
+                          _isPlaying = false;
+                          _animationController.reset();
+                          player = _player(context, index - 1);
+                          _showPlayer = true;
+                          _selectedIndex = index - 1;
+                        });
+                      }
+                    },
                   ),
                   IconButton(
+                    splashColor: Colors.blue,
                     iconSize: 40,
                     icon: AnimatedIcon(
                       icon: AnimatedIcons.play_pause,
@@ -528,8 +566,21 @@ class _RecordingsState extends State<Recordings>
                       color: Colors.white,
                     ),
                     onPressed: () {
-                      if (_isPlaying) _stopPlaying();
-                      if (!_isPlaying) _startPlaying(filename);
+                      if (_isPlaying) {
+                        _pausePlaying();
+                        _isPaused = true;
+                        _animationController.reset();
+                      }
+                      if (!_isPlaying) {
+                        if (_isPaused) {
+                          try {
+                            _resumePlaying();
+                          } catch (e) {
+                            _startPlaying(filename);
+                          }
+                        } else
+                          _startPlaying(filename);
+                      }
                       setState(() {
                         _isPlaying = !_isPlaying;
                         _isPlaying
@@ -539,20 +590,39 @@ class _RecordingsState extends State<Recordings>
                     },
                   ),
                   IconButton(
+                    splashColor: Colors.blue,
+                    disabledColor: Colors.black,
                     icon: Icon(
                       Icons.skip_next,
                       color: Colors.white,
                     ),
-                    onPressed: () {},
+                    onPressed: () {
+                      if (index == audioFiles.length - 1) {
+                        return null;
+                      } else {
+                        _stopPlaying();
+                        setState(() {
+                          _isPaused = false;
+                          _isPlaying = false;
+                          _animationController.reset();
+                          player = _player(context, index + 1);
+                          _showPlayer = true;
+                          _selectedIndex = index + 1;
+                        });
+                      }
+                    },
                   ),
                   IconButton(
+                    splashColor: Colors.blue,
                     icon: Icon(
                       Icons.close,
                       color: Colors.white,
                     ),
                     onPressed: () {
                       setState(() {
+                        _selectedIndex = null;
                         _stopPlaying();
+                        _isPlaying = false;
                         _showPlayer = false;
                       });
                     },
@@ -582,60 +652,63 @@ class _RecordingsState extends State<Recordings>
             shrinkWrap: true,
             itemCount: audioFiles.length,
             itemBuilder: (context, index) {
-              return Column(
-                children: <Widget>[
-                  ListTile(
-                    leading:
-                        Icon(Icons.music_note, color: Colors.white, size: 35),
-                    title: Text(
-                      audioFiles
-                          .elementAt(index)
-                          .path
-                          .split('/')
-                          .last
-                          .split('.')
-                          .first,
-                      style: TextStyle(color: Colors.white),
-                    ),
-                    trailing: Wrap(
-                      children: <Widget>[
-                        IconButton(
-                            icon: Icon(Icons.share, color: Colors.blue),
-                            onPressed: () {}),
-                        IconButton(
-                          icon: Icon(Icons.delete, color: Colors.red),
-                          onPressed: () {
-                            _delete(audioFiles
-                                .elementAt(index)
-                                .path
-                                .split('/')
-                                .last
-                                .split('.')
-                                .first);
-                            setState(() {});
-                          },
-                        ),
-                      ],
-                    ),
-                    onTap: () {
-                      setState(() {
+              return Container(
+                color: _selectedIndex != null && _selectedIndex == index
+                    ? Color(0xff000428).withAlpha(130)
+                    : Colors.transparent,
+                child: Column(
+                  children: <Widget>[
+                    ListTile(
+                      leading:
+                          Icon(Icons.music_note, color: Colors.white, size: 35),
+                      title: Text(
+                        audioFiles
+                            .elementAt(index)
+                            .path
+                            .split('/')
+                            .last
+                            .split('.')
+                            .first,
+                        style: TextStyle(color: Colors.white),
+                      ),
+                      trailing: Wrap(
+                        children: <Widget>[
+                          IconButton(
+                              icon: Icon(Icons.share, color: Colors.blue),
+                              onPressed: () {}),
+                          IconButton(
+                            icon: Icon(Icons.delete, color: Colors.red),
+                            onPressed: () {
+                              _delete(audioFiles
+                                  .elementAt(index)
+                                  .path
+                                  .split('/')
+                                  .last
+                                  .split('.')
+                                  .first);
+                              setState(() {});
+                            },
+                          ),
+                        ],
+                      ),
+                      onTap: () {
                         _stopPlaying();
-                        _animationController.reset();
-                        player = _player(
-                            context,
-                            audioFiles
-                                .elementAt(index)
-                                .path
-                                .split('/')
-                                .last
-                                .split('.')
-                                .first);
-                        _showPlayer = true;
-                      });
-                    },
-                  ),
-                  Divider(color: Colors.black54)
-                ],
+                        setState(() {
+                          _isPaused = false;
+                          _isPlaying = false;
+                          _animationController.reset();
+                          player = _player(context, index);
+                          _showPlayer = true;
+                          _selectedIndex = index;
+                        });
+                      },
+                    ),
+                    Divider(
+                      color: Colors.black54,
+                      thickness: 0.1,
+                    )
+                  ],
+                ),
               );
             },
           ),

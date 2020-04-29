@@ -421,11 +421,14 @@ class _RecordingsState extends State<Recordings>
   bool _isPaused = false;
   Widget player;
   int _selectedIndex;
+  double _playPosition;
+  Stream<PlayStatus> _playSubscription;
 
   @override
   void initState() {
     super.initState();
     flutterSoundPlayer.initialize();
+    _playPosition = 0;
     _animationController =
         AnimationController(vsync: this, duration: Duration(milliseconds: 300));
   }
@@ -447,7 +450,7 @@ class _RecordingsState extends State<Recordings>
     }
   }
 
-  _startPlaying(String filename) async {
+  _startPlaying(BuildContext context, String filename, int index) async {
     await flutterSoundPlayer.startPlayer('${appDir.path}/$filename.aac',
         whenFinished: () {
       setState(() {
@@ -457,10 +460,21 @@ class _RecordingsState extends State<Recordings>
             : _animationController.reverse();
       });
     });
+    _playSubscription = flutterSoundPlayer.onPlayerStateChanged
+      ..listen((e) {
+        if (e != null) {
+          print(e.currentPosition / e.duration);
+          setState(() {
+            _playPosition = (e.currentPosition / e.duration);
+            player = _player(context, index);
+          });
+        }
+      });
   }
 
   _stopPlaying() async {
     await flutterSoundPlayer.stopPlayer();
+    _playPosition = 0;
   }
 
   _pausePlaying() async {
@@ -516,7 +530,7 @@ class _RecordingsState extends State<Recordings>
                   thumbShape: RoundSliderThumbShape(enabledThumbRadius: 6.0),
                 ),
                 child: Slider(
-                  value: 0.1,
+                  value: _playPosition,
                   onChanged: (value) {},
                 ),
               ),
@@ -529,7 +543,7 @@ class _RecordingsState extends State<Recordings>
                   IconButton(
                     splashColor: Colors.blue,
                     icon: Icon(Icons.delete, color: Colors.transparent),
-                    onPressed: () {},
+                    onPressed: null,
                   ),
                   IconButton(
                     splashColor: Colors.blue,
@@ -573,10 +587,10 @@ class _RecordingsState extends State<Recordings>
                           try {
                             _resumePlaying();
                           } catch (e) {
-                            _startPlaying(filename);
+                            _startPlaying(context, filename, index);
                           }
                         } else
-                          _startPlaying(filename);
+                          _startPlaying(context, filename, index);
                       }
                       setState(() {
                         _isPlaying = !_isPlaying;
@@ -617,6 +631,7 @@ class _RecordingsState extends State<Recordings>
                     ),
                     onPressed: () {
                       setState(() {
+                        _playPosition = 0;
                         _selectedIndex = null;
                         _stopPlaying();
                         _isPlaying = false;

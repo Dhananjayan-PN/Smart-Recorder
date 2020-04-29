@@ -506,7 +506,7 @@ class _RecordingsState extends State<Recordings>
               padding: const EdgeInsets.only(top: 10),
               child: Text(
                 filename,
-                style: TextStyle(color: Colors.white),
+                style: TextStyle(color: Colors.white, fontSize: 20),
               ),
             ),
             Padding(
@@ -528,10 +528,7 @@ class _RecordingsState extends State<Recordings>
                 children: <Widget>[
                   IconButton(
                     splashColor: Colors.blue,
-                    icon: Icon(
-                      Icons.delete,
-                      color: Colors.transparent,
-                    ),
+                    icon: Icon(Icons.delete, color: Colors.transparent),
                     onPressed: () {},
                   ),
                   IconButton(
@@ -654,7 +651,7 @@ class _RecordingsState extends State<Recordings>
             itemBuilder: (context, index) {
               return Container(
                 color: _selectedIndex != null && _selectedIndex == index
-                    ? Color(0xff000428).withAlpha(130)
+                    ? Color(0xff000428).withAlpha(200)
                     : Colors.transparent,
                 child: Column(
                   children: <Widget>[
@@ -669,7 +666,7 @@ class _RecordingsState extends State<Recordings>
                             .last
                             .split('.')
                             .first,
-                        style: TextStyle(color: Colors.white),
+                        style: TextStyle(color: Colors.white, fontSize: 16),
                       ),
                       trailing: Wrap(
                         children: <Widget>[

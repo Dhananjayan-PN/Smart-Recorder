@@ -213,7 +213,7 @@ class _RecordState extends State<Record>
   }
 
   _startRecording() async {
-    File outputFile = File('${appDir.path}/flutter_sound-tmp.aac');
+    File outputFile = File('${appDir.path}/tmp.aac');
     await flutterSoundRecorder.startRecorder(
         uri: outputFile.path, codec: t_CODEC.CODEC_AAC);
     stopWatch.start();
@@ -299,7 +299,7 @@ class _RecordState extends State<Record>
   }
 
   _delete() {
-    var myFile = File('${appDir.path}/flutter_sound-tmp.aac');
+    var myFile = File('${appDir.path}/tmp.aac');
     myFile.delete();
     Scaffold.of(context).showSnackBar(
       SnackBar(
@@ -311,7 +311,7 @@ class _RecordState extends State<Record>
   }
 
   _rename(String filename) {
-    var myFile = File('${appDir.path}/flutter_sound-tmp.aac');
+    var myFile = File('${appDir.path}/tmp.aac');
     myFile.rename('${appDir.path}/$filename.aac');
     Scaffold.of(context).showSnackBar(
       SnackBar(
@@ -418,6 +418,7 @@ class _RecordingsState extends State<Recordings>
   FlutterSoundPlayer flutterSoundPlayer = FlutterSoundPlayer();
   bool _isPlaying = false;
   bool _showPlayer = false;
+  Widget player;
 
   @override
   void initState() {
@@ -465,6 +466,103 @@ class _RecordingsState extends State<Recordings>
       ),
     );
     _updateAudioFiles();
+  }
+
+  Widget _player(BuildContext context, String filename) {
+    return Positioned(
+      bottom: 0.0,
+      child: Container(
+        height: 150,
+        width: MediaQuery.of(context).size.width,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(30), topRight: Radius.circular(30)),
+          color: Color(0xff000428),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            Padding(
+              padding: const EdgeInsets.only(top: 10),
+              child: Text(
+                filename,
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(0.0),
+              child: SliderTheme(
+                data: SliderTheme.of(context).copyWith(
+                  thumbShape: RoundSliderThumbShape(enabledThumbRadius: 6.0),
+                ),
+                child: Slider(
+                  value: 0.1,
+                  onChanged: (value) {},
+                ),
+              ),
+            ),
+            Padding(
+              padding: EdgeInsets.only(bottom: 5),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  IconButton(
+                    icon: Icon(
+                      Icons.skip_previous,
+                      color: Colors.transparent,
+                    ),
+                    onPressed: () {},
+                  ),
+                  IconButton(
+                    icon: Icon(
+                      Icons.skip_previous,
+                      color: Colors.white,
+                    ),
+                    onPressed: () {},
+                  ),
+                  IconButton(
+                    iconSize: 40,
+                    icon: AnimatedIcon(
+                      icon: AnimatedIcons.play_pause,
+                      progress: _animationController,
+                      color: Colors.white,
+                    ),
+                    onPressed: () {
+                      if (_isPlaying) _stopPlaying();
+                      if (!_isPlaying) _startPlaying(filename);
+                      setState(() {
+                        _isPlaying = !_isPlaying;
+                        _isPlaying
+                            ? _animationController.forward()
+                            : _animationController.reverse();
+                      });
+                    },
+                  ),
+                  IconButton(
+                    icon: Icon(
+                      Icons.skip_next,
+                      color: Colors.white,
+                    ),
+                    onPressed: () {},
+                  ),
+                  IconButton(
+                    icon: Icon(
+                      Icons.close,
+                      color: Colors.white,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _showPlayer = false;
+                      });
+                    },
+                  )
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -520,7 +618,18 @@ class _RecordingsState extends State<Recordings>
                     ),
                     onTap: () {
                       setState(() {
-                        _showPlayer = !_showPlayer;
+                        _stopPlaying();
+                        _animationController.reset();
+                        player = _player(
+                            context,
+                            audioFiles
+                                .elementAt(index)
+                                .path
+                                .split('/')
+                                .last
+                                .split('.')
+                                .first);
+                        _showPlayer = true;
                       });
                     },
                   ),
@@ -529,80 +638,7 @@ class _RecordingsState extends State<Recordings>
               );
             },
           ),
-          if (_showPlayer)
-            Positioned(
-              bottom: 0.0,
-              child: Container(
-                height: 150,
-                width: MediaQuery.of(context).size.width,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(30),
-                      topRight: Radius.circular(30)),
-                  color: Color(0xff000428),
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: <Widget>[
-                    Padding(
-                      padding: const EdgeInsets.only(top: 10),
-                      child: Text(
-                        'fatty',
-                        style: TextStyle(color: Colors.white),
-                      ),
-                    ),
-                    SliderTheme(
-                      data: SliderTheme.of(context).copyWith(
-                        thumbShape:
-                            RoundSliderThumbShape(enabledThumbRadius: 6.0),
-                      ),
-                      child: Slider(
-                        value: 0.1,
-                        onChanged: (value) {},
-                      ),
-                    ),
-                    Padding(
-                      padding: EdgeInsets.only(bottom: 5),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: <Widget>[
-                          IconButton(
-                            icon: Icon(
-                              Icons.skip_previous,
-                              color: Colors.white,
-                            ),
-                            onPressed: () {},
-                          ),
-                          IconButton(
-                            iconSize: 40,
-                            icon: AnimatedIcon(
-                              icon: AnimatedIcons.play_pause,
-                              progress: _animationController,
-                              color: Colors.white,
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                _isPlaying = !_isPlaying;
-                                _isPlaying
-                                    ? _animationController.forward()
-                                    : _animationController.reverse();
-                              });
-                            },
-                          ),
-                          IconButton(
-                            icon: Icon(
-                              Icons.skip_next,
-                              color: Colors.white,
-                            ),
-                            onPressed: () {},
-                          )
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            )
+          if (_showPlayer) player
         ],
       ),
     );

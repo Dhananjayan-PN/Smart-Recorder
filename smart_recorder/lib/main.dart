@@ -552,6 +552,7 @@ class _RecordingsState extends State<Recordings>
                     ),
                     onPressed: () {
                       setState(() {
+                        _stopPlaying();
                         _showPlayer = false;
                       });
                     },

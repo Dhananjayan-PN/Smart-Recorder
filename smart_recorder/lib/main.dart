@@ -19,7 +19,6 @@ void main() {
 }
 
 class MyApp extends StatelessWidget {
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     SystemChrome.setPreferredOrientations([
@@ -37,7 +36,8 @@ class HomePage extends StatefulWidget {
   HomePageState createState() => HomePageState();
 }
 
-class HomePageState extends State<HomePage> with SingleTickerProviderStateMixin {
+class HomePageState extends State<HomePage>
+    with SingleTickerProviderStateMixin {
   getData() async {
     appDir = await getApplicationDocumentsDirectory();
     List files = Directory(appDir.path).listSync();
@@ -69,7 +69,10 @@ class HomePageState extends State<HomePage> with SingleTickerProviderStateMixin 
             ),
           ),
           elevation: 30,
-          gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Color(0xff000428), Color(0xff004e92)]),
+          gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Color(0xff000428), Color(0xff004e92)]),
           title: Text('Smart Recorder', style: TextStyle(fontSize: 20)),
           actions: <Widget>[
             PopupMenuButton(
@@ -86,7 +89,11 @@ class HomePageState extends State<HomePage> with SingleTickerProviderStateMixin 
               ],
               onSelected: (value) {
                 if (value == 1) {
-                  Navigator.push(context, PageTransition(type: PageTransitionType.rightToLeft, child: Settings()));
+                  Navigator.push(
+                      context,
+                      PageTransition(
+                          type: PageTransitionType.rightToLeft,
+                          child: Settings()));
                 }
                 if (value == 2) {}
               },
@@ -109,7 +116,8 @@ class Record extends StatefulWidget {
   _RecordState createState() => _RecordState();
 }
 
-class _RecordState extends State<Record> with TickerProviderStateMixin, AutomaticKeepAliveClientMixin<Record> {
+class _RecordState extends State<Record>
+    with TickerProviderStateMixin, AutomaticKeepAliveClientMixin<Record> {
   final _formKey = GlobalKey<FormState>();
   TextEditingController _controller = TextEditingController();
   FlutterSoundRecorder flutterSoundRecorder = FlutterSoundRecorder();
@@ -138,7 +146,8 @@ class _RecordState extends State<Record> with TickerProviderStateMixin, Automati
           _recordOrStopButton();
         }
       });
-    animation = CurvedAnimation(parent: animationController, curve: Curves.easeInBack);
+    animation =
+        CurvedAnimation(parent: animationController, curve: Curves.easeInBack);
   }
 
   @override
@@ -205,7 +214,8 @@ class _RecordState extends State<Record> with TickerProviderStateMixin, Automati
 
   _startRecording() async {
     File outputFile = File('${appDir.path}/flutter_sound-tmp.aac');
-    await flutterSoundRecorder.startRecorder(uri: outputFile.path, codec: t_CODEC.CODEC_AAC);
+    await flutterSoundRecorder.startRecorder(
+        uri: outputFile.path, codec: t_CODEC.CODEC_AAC);
     stopWatch.start();
     startTimer();
     setState(() {
@@ -228,10 +238,11 @@ class _RecordState extends State<Record> with TickerProviderStateMixin, Automati
   _userCheck() {
     return showDialog<void>(
       context: context,
-      barrierDismissible: false, // user must tap button!
+      barrierDismissible: false,
       builder: (BuildContext context) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
           elevation: 24.0,
           backgroundColor: Color(0xff001448),
           title: Text(
@@ -316,7 +327,10 @@ class _RecordState extends State<Record> with TickerProviderStateMixin, Automati
     super.build(context);
     return Container(
       decoration: BoxDecoration(
-        gradient: LinearGradient(begin: Alignment.bottomCenter, end: Alignment.topCenter, colors: [Color(0xff000428), Color(0xff004e92)]),
+        gradient: LinearGradient(
+            begin: Alignment.bottomCenter,
+            end: Alignment.topCenter,
+            colors: [Color(0xff000428), Color(0xff004e92)]),
       ),
       child: ListView(
         children: <Widget>[
@@ -398,16 +412,19 @@ class Recordings extends StatefulWidget {
   _RecordingsState createState() => _RecordingsState();
 }
 
-class _RecordingsState extends State<Recordings> with SingleTickerProviderStateMixin {
+class _RecordingsState extends State<Recordings>
+    with SingleTickerProviderStateMixin {
   AnimationController _animationController;
   FlutterSoundPlayer flutterSoundPlayer = FlutterSoundPlayer();
   bool _isPlaying = false;
+  bool _showPlayer = false;
 
   @override
   void initState() {
     super.initState();
     flutterSoundPlayer.initialize();
-    _animationController = AnimationController(vsync: this, duration: Duration(milliseconds: 300));
+    _animationController =
+        AnimationController(vsync: this, duration: Duration(milliseconds: 300));
   }
 
   @override
@@ -454,7 +471,10 @@ class _RecordingsState extends State<Recordings> with SingleTickerProviderStateM
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        gradient: LinearGradient(begin: Alignment.bottomCenter, end: Alignment.topCenter, colors: [Color(0xff000428), Color(0xff004e92)]),
+        gradient: LinearGradient(
+            begin: Alignment.bottomCenter,
+            end: Alignment.topCenter,
+            colors: [Color(0xff000428), Color(0xff004e92)]),
       ),
       child: Stack(
         children: <Widget>[
@@ -466,62 +486,123 @@ class _RecordingsState extends State<Recordings> with SingleTickerProviderStateM
               return Column(
                 children: <Widget>[
                   ListTile(
-                    leading: Icon(Icons.music_note, color: Colors.white, size: 35),
+                    leading:
+                        Icon(Icons.music_note, color: Colors.white, size: 35),
                     title: Text(
-                      audioFiles.elementAt(index).path.split('/').last.split('.').first,
+                      audioFiles
+                          .elementAt(index)
+                          .path
+                          .split('/')
+                          .last
+                          .split('.')
+                          .first,
                       style: TextStyle(color: Colors.white),
                     ),
                     trailing: Wrap(
                       children: <Widget>[
-                        IconButton(icon: Icon(Icons.share, color: Colors.blue), onPressed: () {}),
+                        IconButton(
+                            icon: Icon(Icons.share, color: Colors.blue),
+                            onPressed: () {}),
                         IconButton(
                           icon: Icon(Icons.delete, color: Colors.red),
                           onPressed: () {
-                            _delete(audioFiles.elementAt(index).path.split('/').last.split('.').first);
+                            _delete(audioFiles
+                                .elementAt(index)
+                                .path
+                                .split('/')
+                                .last
+                                .split('.')
+                                .first);
                             setState(() {});
                           },
                         ),
                       ],
                     ),
-                    onTap: () {},
+                    onTap: () {
+                      setState(() {
+                        _showPlayer = !_showPlayer;
+                      });
+                    },
                   ),
                   Divider(color: Colors.black54)
                 ],
               );
             },
           ),
-          Positioned(
-            bottom: 0.0,
-            child: Container(
-              height: 110,
-              width: MediaQuery.of(context).size.width,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.only(topLeft: Radius.circular(30), topRight: Radius.circular(30)),
-                color: Color(0xff000428),
-              ),
-              child: Row(
-                children: <Widget>[
-                  Padding(
-                    padding: EdgeInsets.only(left: 10),
-                    child: IconButton(
-                      iconSize: 40,
-                      icon: AnimatedIcon(
-                        icon: AnimatedIcons.play_pause,
-                        progress: _animationController,
-                        color: Colors.white,
+          if (_showPlayer)
+            Positioned(
+              bottom: 0.0,
+              child: Container(
+                height: 150,
+                width: MediaQuery.of(context).size.width,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(30),
+                      topRight: Radius.circular(30)),
+                  color: Color(0xff000428),
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    Padding(
+                      padding: const EdgeInsets.only(top: 10),
+                      child: Text(
+                        'fatty',
+                        style: TextStyle(color: Colors.white),
                       ),
-                      onPressed: () {
-                        setState(() {
-                          _isPlaying = !_isPlaying;
-                          _isPlaying ? _animationController.forward() : _animationController.reverse();
-                        });
-                      },
                     ),
-                  )
-                ],
+                    SliderTheme(
+                      data: SliderTheme.of(context).copyWith(
+                        thumbShape:
+                            RoundSliderThumbShape(enabledThumbRadius: 6.0),
+                      ),
+                      child: Slider(
+                        value: 0.1,
+                        onChanged: (value) {},
+                      ),
+                    ),
+                    Padding(
+                      padding: EdgeInsets.only(bottom: 5),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: <Widget>[
+                          IconButton(
+                            icon: Icon(
+                              Icons.skip_previous,
+                              color: Colors.white,
+                            ),
+                            onPressed: () {},
+                          ),
+                          IconButton(
+                            iconSize: 40,
+                            icon: AnimatedIcon(
+                              icon: AnimatedIcons.play_pause,
+                              progress: _animationController,
+                              color: Colors.white,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _isPlaying = !_isPlaying;
+                                _isPlaying
+                                    ? _animationController.forward()
+                                    : _animationController.reverse();
+                              });
+                            },
+                          ),
+                          IconButton(
+                            icon: Icon(
+                              Icons.skip_next,
+                              color: Colors.white,
+                            ),
+                            onPressed: () {},
+                          )
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          )
+            )
         ],
       ),
     );
@@ -545,7 +626,10 @@ class _SettingsState extends State<Settings> {
           },
         ),
         elevation: 30,
-        gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Color(0xff000428), Color(0xff004e92)]),
+        gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xff000428), Color(0xff004e92)]),
         title: Text(
           'Settings',
           style: TextStyle(fontSize: 20),
@@ -553,7 +637,10 @@ class _SettingsState extends State<Settings> {
       ),
       body: Container(
         decoration: BoxDecoration(
-          gradient: LinearGradient(begin: Alignment.bottomCenter, end: Alignment.topCenter, colors: [Color(0xff000428), Color(0xff004e92)]),
+          gradient: LinearGradient(
+              begin: Alignment.bottomCenter,
+              end: Alignment.topCenter,
+              colors: [Color(0xff000428), Color(0xff004e92)]),
         ),
       ),
     );

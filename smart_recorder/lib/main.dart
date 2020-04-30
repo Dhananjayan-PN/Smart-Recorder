@@ -745,7 +745,7 @@ class _RecordingsState extends State<Recordings>
               size: 30,
             ),
             Padding(
-              padding: const EdgeInsets.only(top: 10, bottom: 100.0),
+              padding: const EdgeInsets.only(top: 10, bottom: 140.0),
               child: Center(
                 child: Text(
                   "Looks like you haven't recorded anything yet\nSwipe to the left and get recording",

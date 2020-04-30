@@ -6,13 +6,14 @@ import 'package:page_transition/page_transition.dart';
 import 'package:flutter_sound/flutter_sound_recorder.dart';
 import 'dart:io';
 import 'dart:async';
-//import 'package:share/share.dart';
+import 'package:share/share.dart';
 import 'package:flutter_sound/flutter_sound_player.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter/services.dart';
 
 Directory appDir;
 List audioFiles = List();
+GlobalKey<ScaffoldState> _scaffKey = GlobalKey<ScaffoldState>();
 
 void main() {
   runApp(MyApp());
@@ -60,6 +61,7 @@ class HomePageState extends State<HomePage>
     return DefaultTabController(
       length: 2,
       child: Scaffold(
+        key: _scaffKey,
         appBar: GradientAppBar(
           leading: Padding(
             padding: EdgeInsets.only(left: 20, top: 5),
@@ -301,7 +303,7 @@ class _RecordState extends State<Record>
   _delete() {
     var myFile = File('${appDir.path}/tmp.aac');
     myFile.delete();
-    Scaffold.of(context).showSnackBar(
+    _scaffKey.currentState.showSnackBar(
       SnackBar(
         duration: Duration(seconds: 2),
         content: Text('Recording Deleted'),
@@ -313,7 +315,7 @@ class _RecordState extends State<Record>
   _rename(String filename) {
     var myFile = File('${appDir.path}/tmp.aac');
     myFile.rename('${appDir.path}/$filename.aac');
-    Scaffold.of(context).showSnackBar(
+    _scaffKey.currentState.showSnackBar(
       SnackBar(
         duration: Duration(seconds: 2),
         content: Text('Recording Saved'),
@@ -488,16 +490,92 @@ class _RecordingsState extends State<Recordings>
   _delete(String filename) {
     if (_isPlaying) {
       flutterSoundPlayer.stopPlayer();
+      _playPosition = 0;
+      setState(() {
+        _showPlayer = false;
+      });
+      _userCheck(filename);
+    } else {
+      setState(() {
+        _showPlayer = false;
+      });
+      _userCheck(filename);
     }
-    var myFile = File('${appDir.path}/$filename.aac');
-    myFile.delete();
-    Scaffold.of(context).showSnackBar(
-      SnackBar(
-        duration: Duration(seconds: 2),
-        content: Text('Recording Deleted'),
-      ),
+  }
+
+  _userCheck(String filename) {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          elevation: 24.0,
+          backgroundColor: Color(0xff001448),
+          title: Text(
+            'Delete Recording ?',
+            style: TextStyle(color: Colors.white),
+          ),
+          content: Text(
+            "Are you sure you want to delete '$filename' ?",
+            style: TextStyle(color: Colors.white70),
+          ),
+          actions: <Widget>[
+            FlatButton(
+              child: Text(
+                'Cancel',
+                style: TextStyle(color: Colors.blue),
+              ),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            FlatButton(
+              child: Text(
+                'Delete',
+                style: TextStyle(color: Colors.red),
+              ),
+              onPressed: () {
+                Navigator.of(context).pop();
+                var myFile = File('${appDir.path}/$filename.aac');
+                myFile.delete();
+                _scaffKey.currentState.showSnackBar(
+                  SnackBar(
+                    duration: Duration(seconds: 2),
+                    content: Text('Recording Deleted'),
+                  ),
+                );
+                setState(() {
+                  _updateAudioFiles();
+                });
+              },
+            ),
+          ],
+        );
+      },
     );
-    _updateAudioFiles();
+  }
+
+  Future<int> _getDuration(int index) async {
+    int dur =
+        await flutterSoundHelper.duration(audioFiles.elementAt(index).path);
+    return dur;
+  }
+
+  _getDurationString(int milliseconds) {
+    Duration duration;
+    try {
+      duration = Duration(milliseconds: milliseconds);
+    } catch (e) {
+      duration = Duration(milliseconds: 0);
+    }
+    String dur = duration.inHours.toString().padLeft(2, "0") +
+        ":" +
+        (duration.inMinutes % 60).toString().padLeft(2, "0") +
+        ":" +
+        (duration.inSeconds % 60).toString().padLeft(2, "0");
+    return dur;
   }
 
   Widget _player(BuildContext context, int index) {
@@ -527,7 +605,7 @@ class _RecordingsState extends State<Recordings>
               padding: const EdgeInsets.all(0.0),
               child: SliderTheme(
                 data: SliderTheme.of(context).copyWith(
-                  thumbShape: RoundSliderThumbShape(enabledThumbRadius: 6.0),
+                  thumbShape: RoundSliderThumbShape(enabledThumbRadius: 2.0),
                 ),
                 child: Slider(
                   value: _playPosition,
@@ -664,64 +742,71 @@ class _RecordingsState extends State<Recordings>
             shrinkWrap: true,
             itemCount: audioFiles.length,
             itemBuilder: (context, index) {
-              return Container(
-                color: _selectedIndex != null && _selectedIndex == index
-                    ? Color(0xff000428).withAlpha(200)
-                    : Colors.transparent,
-                child: Column(
-                  children: <Widget>[
-                    ListTile(
-                      leading:
-                          Icon(Icons.music_note, color: Colors.white, size: 35),
-                      title: Text(
-                        audioFiles
-                            .elementAt(index)
-                            .path
-                            .split('/')
-                            .last
-                            .split('.')
-                            .first,
-                        style: TextStyle(color: Colors.white, fontSize: 16),
-                      ),
-                      trailing: Wrap(
+              return FutureBuilder<int>(
+                  future: _getDuration(index),
+                  builder: (BuildContext context, AsyncSnapshot<int> snapshot) {
+                    return Container(
+                      color: _selectedIndex != null && _selectedIndex == index
+                          ? Color(0xff000428).withAlpha(200)
+                          : Colors.transparent,
+                      child: Column(
                         children: <Widget>[
-                          IconButton(
-                              icon: Icon(Icons.share, color: Colors.blue),
-                              onPressed: () {}),
-                          IconButton(
-                            icon: Icon(Icons.delete, color: Colors.red),
-                            onPressed: () {
-                              _delete(audioFiles
+                          ListTile(
+                            leading: Icon(Icons.music_note,
+                                color: Colors.white, size: 35),
+                            title: Text(
+                              audioFiles
                                   .elementAt(index)
                                   .path
                                   .split('/')
                                   .last
                                   .split('.')
-                                  .first);
-                              setState(() {});
+                                  .first,
+                              style:
+                                  TextStyle(color: Colors.white, fontSize: 16),
+                            ),
+                            subtitle: Text(_getDurationString(snapshot.data),
+                                style: TextStyle(color: Colors.white60)),
+                            trailing: Wrap(
+                              children: <Widget>[
+                                IconButton(
+                                    icon: Icon(Icons.share, color: Colors.blue),
+                                    onPressed: () {}),
+                                IconButton(
+                                  icon: Icon(Icons.delete, color: Colors.red),
+                                  onPressed: () {
+                                    _delete(audioFiles
+                                        .elementAt(index)
+                                        .path
+                                        .split('/')
+                                        .last
+                                        .split('.')
+                                        .first);
+                                    setState(() {});
+                                  },
+                                ),
+                              ],
+                            ),
+                            onTap: () {
+                              _stopPlaying();
+                              setState(() {
+                                _isPaused = false;
+                                _isPlaying = false;
+                                _animationController.reset();
+                                player = _player(context, index);
+                                _showPlayer = true;
+                                _selectedIndex = index;
+                              });
                             },
                           ),
+                          Divider(
+                            color: Colors.black54,
+                            thickness: 0.1,
+                          )
                         ],
                       ),
-                      onTap: () {
-                        _stopPlaying();
-                        setState(() {
-                          _isPaused = false;
-                          _isPlaying = false;
-                          _animationController.reset();
-                          player = _player(context, index);
-                          _showPlayer = true;
-                          _selectedIndex = index;
-                        });
-                      },
-                    ),
-                    Divider(
-                      color: Colors.black54,
-                      thickness: 0.1,
-                    )
-                  ],
-                ),
-              );
+                    );
+                  });
             },
           ),
           if (_showPlayer) player

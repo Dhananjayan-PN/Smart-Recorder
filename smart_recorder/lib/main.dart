@@ -25,6 +25,10 @@ class MyApp extends StatelessWidget {
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
     ]);
+    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+      systemNavigationBarColor: Color(0xff000428), // navigation bar color
+      statusBarColor: Color(0xff000428).withAlpha(150), // status bar color
+    ));
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       home: HomePage(),

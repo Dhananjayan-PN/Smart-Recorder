@@ -16,6 +16,7 @@ dependencies:
   flutter_sound: ^4.0.1+1
   path_provider: ^1.6.7
   share_extend: ^1.1.5
+  custom_splash: ^0.0.2
 
 
 dev_dependencies:
@@ -24,3 +25,5 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - images/

@@ -8,6 +8,7 @@ import 'dart:io';
 import 'dart:async';
 import 'package:share_extend/share_extend.dart';
 import 'package:flutter_sound/flutter_sound_player.dart';
+import 'package:custom_splash/custom_splash.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter/services.dart';
 
@@ -26,12 +27,19 @@ class MyApp extends StatelessWidget {
       DeviceOrientation.portraitUp,
     ]);
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-      systemNavigationBarColor: Color(0xff000428), // navigation bar color
-      statusBarColor: Color(0xff000428).withAlpha(150), // status bar color
+      systemNavigationBarColor: Color(0xff000428),
+      statusBarColor: Color(0xff000428).withAlpha(150),
     ));
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: HomePage(),
+      home: CustomSplash(
+        imagePath: 'images/logo.png',
+        backGroundColor: Color(0xff000428),
+        animationEffect: 'zoom-out',
+        duration: 2500,
+        type: CustomSplashType.StaticDuration,
+        home: HomePage(),
+      ),
     );
   }
 }

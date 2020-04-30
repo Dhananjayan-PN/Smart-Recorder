@@ -6,7 +6,7 @@ import 'package:page_transition/page_transition.dart';
 import 'package:flutter_sound/flutter_sound_recorder.dart';
 import 'dart:io';
 import 'dart:async';
-import 'package:share/share.dart';
+import 'package:share_extend/share_extend.dart';
 import 'package:flutter_sound/flutter_sound_player.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter/services.dart';
@@ -78,26 +78,25 @@ class HomePageState extends State<HomePage>
           title: Text('Smart Recorder', style: TextStyle(fontSize: 20)),
           actions: <Widget>[
             PopupMenuButton(
-              offset: Offset(0, 50),
               itemBuilder: (context) => [
                 PopupMenuItem(
                   value: 1,
-                  child: Text('Settings'),
+                  child: Text('Rate the App'),
                 ),
-                PopupMenuItem(
+                /*PopupMenuItem(
                   value: 2,
-                  child: Text('Rate the app'),
-                )
+                  child: Text('Settings'),
+                )*/
               ],
               onSelected: (value) {
-                if (value == 1) {
+                if (value == 1) {}
+                if (value == 2) {
                   Navigator.push(
                       context,
                       PageTransition(
                           type: PageTransitionType.rightToLeft,
                           child: Settings()));
                 }
-                if (value == 2) {}
               },
             )
           ],
@@ -728,6 +727,46 @@ class _RecordingsState extends State<Recordings>
 
   @override
   Widget build(BuildContext context) {
+    if (audioFiles.length == 0) {
+      return Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+              begin: Alignment.bottomCenter,
+              end: Alignment.topCenter,
+              colors: [Color(0xff000428), Color(0xff004e92)]),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: <Widget>[
+            Icon(
+              Icons.sentiment_satisfied,
+              color: Colors.white70,
+              size: 30,
+            ),
+            Padding(
+              padding: const EdgeInsets.only(top: 10, bottom: 100.0),
+              child: Center(
+                child: Text(
+                  "Looks like you haven't recorded anything yet\nSwipe to the left and get recording",
+                  style: TextStyle(
+                    color: Colors.white70,
+                    shadows: [
+                      Shadow(
+                        blurRadius: 20.0,
+                        color: Color(0xff000428),
+                        offset: Offset(5.0, 5.0),
+                      ),
+                    ],
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -755,13 +794,7 @@ class _RecordingsState extends State<Recordings>
                             leading: Icon(Icons.music_note,
                                 color: Colors.white, size: 35),
                             title: Text(
-                              audioFiles
-                                  .elementAt(index)
-                                  .path
-                                  .split('/')
-                                  .last
-                                  .split('.')
-                                  .first,
+                              "${audioFiles.elementAt(index).path.split('/').last.split('.').first}",
                               style:
                                   TextStyle(color: Colors.white, fontSize: 16),
                             ),
@@ -771,7 +804,13 @@ class _RecordingsState extends State<Recordings>
                               children: <Widget>[
                                 IconButton(
                                     icon: Icon(Icons.share, color: Colors.blue),
-                                    onPressed: () {}),
+                                    onPressed: () {
+                                      ShareExtend.share(
+                                          audioFiles.elementAt(index).path,
+                                          "Recording",
+                                          sharePanelTitle:
+                                              "Share '${audioFiles.elementAt(index).path.split('/').last.split('.').first}.aac'");
+                                    }),
                                 IconButton(
                                   icon: Icon(Icons.delete, color: Colors.red),
                                   onPressed: () {

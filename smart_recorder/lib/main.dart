@@ -275,7 +275,13 @@ class _RecordState extends State<Record>
               ),
               style: TextStyle(color: Colors.white),
               validator: (value) {
-                return value.isEmpty ? 'File name is rquired to save' : null;
+                if (value.isEmpty) {
+                  return 'File name is required to save';
+                }
+                if (value.contains('.')) {
+                  return "Enter filename without '.'";
+                }
+                return null;
               },
             ),
           ),
